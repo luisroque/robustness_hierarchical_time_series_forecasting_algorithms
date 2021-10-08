@@ -1,6 +1,11 @@
 from scipy.interpolate import CubicSpline
 
 class manipulate_data():
+    """
+    Class used to manipulate the generative process of the data
+    by applying the following transformations: jittering, scaling,
+    magnitude warping and time warping.
+    """
     
     def __init__(self, x, transformation):
         self.x = x
