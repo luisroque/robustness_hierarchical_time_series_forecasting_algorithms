@@ -1,11 +1,6 @@
 from scipy.interpolate import CubicSpline
 
 class manipulate_data():
-    """
-    Class used to manipulate the generative process of the data
-    by applying the following transformations: jittering, scaling,
-    magnitude warping and time warping.
-    """
     
     def __init__(self, x, transformation):
         self.x = x
@@ -18,30 +13,29 @@ class manipulate_data():
         factor = np.random.normal(loc=1., scale=sigma, size=(self.x.shape[0],self.x.shape[2]))
         return np.multiply(self.x, factor[:,np.newaxis,:])
 
-    def _magnitude_warp(self, sigma=0.2, knot=4):
+    def _magnitude_warp(self, sigma=0.25, knot=4):
         orig_steps = np.arange(self.x.shape[1])
 
-        random_warps = np.random.normal(loc=1.0, scale=sigma, size=(self.x.shape[0], knot+2, self.x.shape[2]))
-        warp_steps = (np.ones((self.x.shape[2],1))*(np.linspace(0, self.x.shape[1]-1., num=knot+2))).T
+        random_warps = np.random.normal(loc=1.0, scale=sigma, size=(self.x.shape[0], knot+2))
+        warp_steps = ((np.linspace(0, self.x.shape[1]-1., num=knot+2)))
         ret = np.zeros_like(self.x)
         for i, pat in enumerate(self.x):
-            warper = np.array([CubicSpline(warp_steps[:,dim], random_warps[i,:,dim])(orig_steps) for dim in range(self.x.shape[2])]).T
+            warper = np.array([CubicSpline(warp_steps, random_warps[i,:])(orig_steps)])
             ret[i] = pat * warper
 
         return ret
 
-    def _time_warp(self, sigma=0.1, knot=4):
+    def _time_warp(self, sigma=0.025, knot=4):
         orig_steps = np.arange(self.x.shape[1])
 
-        random_warps = np.random.normal(loc=1.0, scale=sigma, size=(self.x.shape[0], knot+2, self.x.shape[2]))
-        warp_steps = (np.ones((self.x.shape[2],1))*(np.linspace(0, self.x.shape[1]-1., num=knot+2))).T
+        random_warps = np.random.normal(loc=1.0, scale=sigma, size=(self.x.shape[0], knot+2))
+        warp_steps = ((np.linspace(0, self.x.shape[1]-1., num=knot+2)))
 
         ret = np.zeros_like(x)
         for i, pat in enumerate(x):
-            for dim in range(x.shape[2]):
-                time_warp = CubicSpline(warp_steps[:,dim], warp_steps[:,dim] * random_warps[i,:,dim])(orig_steps)
-                scale = (self.x.shape[1]-1)/time_warp[-1]
-                ret[i,:,dim] = np.interp(orig_steps, np.clip(scale*time_warp, 0, self.x.shape[1]-1), pat[:,dim]).T
+            time_warp = CubicSpline(warp_steps, warp_steps * random_warps[i,:])(orig_steps)
+            scale = (self.x.shape[1]-1)/time_warp[-1]
+            ret[i,:] = np.interp(orig_steps, np.clip(scale*time_warp, 0, self.x.shape[1]-1), pat).T
         return ret  
     
     def apply_transf(self):
