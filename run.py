@@ -32,6 +32,6 @@ for i in range(1, 7):
 transf = np.array(transf) # (n_versions, n_samples, n_series) - n_samples are just repeating transformations
 print('SUCCESS: Stored 6 transformed versions (each with 10 samples) of the original dataset')
 
-visualize_ver_transf('prison', 1, 6, transf[0, 0, :])
+visualize_ver_transf('prison', 1, 8, transf[0, 0, :])
 
-visualize_series_transf('prison', 6, 6, transf[:, 0, :])
+visualize_series_transf('prison', 8, 6, transf[:, 0, :])

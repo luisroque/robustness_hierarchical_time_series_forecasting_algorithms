@@ -33,7 +33,7 @@ def visualize_series_transf(dataset, n_series, n_versions, transf):
             y_ver.append(y_new)
     y_ver = np.array(y_ver)
 
-    _, ax = plt.subplots(2, int(np.floor(n_versions/2)), sharex=True)
+    _, ax = plt.subplots(2, int(np.floor(n_series/2)), sharex=True)
     ax = ax.ravel()
 
     colors = plt.cm.Blues_r(np.linspace(0, 0.65, n_versions))[::-1]
@@ -43,7 +43,7 @@ def visualize_series_transf(dataset, n_series, n_versions, transf):
             if (i+1) % 6 == 0:
                 ax[j].plot(y[i, :, j], label='original', color='darkorange')
             ax[j].plot(y_ver[i, 0, :, j], label=f'version {i}', color=colors[i])
-        ax[i].set_title(f'Series {i}, [{"".join(list(transf[:,i].astype("<U1")))}]')
+            ax[j].set_title(f'Series {j}, [{"".join(list(transf[:,j].astype("<U1")))}]')
     plt.legend()
     plt.show()
 
