@@ -15,7 +15,7 @@ def visualize_ver_transf(dataset, version, n_series, transf):
             if i % 9 == 0 and not i == 0:
                 ax[j].plot(y[i, :, j], label='original', color='darkorange')
                 ax[j].set_title(f'{transf[j]}, s={j}')
-            ax[j].plot(y_new[i, :, j], color='black', alpha=0.3)
+            ax[j].plot(y_new[i, :, j], color='darkblue', alpha=0.3)
 
     plt.legend()
     fig.suptitle(f'10 samples of {n_series} of the transformed series')
@@ -43,7 +43,7 @@ def visualize_series_transf(dataset, n_series, n_versions, transf):
             if (i+1) % 6 == 0:
                 ax[j].plot(y[i, :, j], label='original', color='darkorange')
             ax[j].plot(y_ver[i, 0, :, j], label=f'version {i}', color=colors[i])
-        ax[i].set_title(f'Series {i}')
+        ax[i].set_title(f'Series {i}, [{"".join(list(transf[:,i].astype("<U1")))}]')
     plt.legend()
     plt.show()
 
