@@ -3,11 +3,13 @@ from .pre_processing import generate_groups_data_flat, generate_groups_data_matr
 import calendar
 from pathlib import Path
 
+
 class preprocess_datasets():
 
     def __init__(self, dataset):
         self.dataset = dataset
 
+    @staticmethod
     def _prison():
         # prison dataset
         path = Path(__file__).parent / './original_datasets/prisonLF.csv'
@@ -29,6 +31,7 @@ class preprocess_datasets():
         groups = generate_groups_data_matrix(groups)
         return groups
 
+    @staticmethod
     def _tourism():
         # tourism dataset
         path = Path(__file__).parent / './original_datasets/TourismData_v3.csv'

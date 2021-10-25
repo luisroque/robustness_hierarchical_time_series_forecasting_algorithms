@@ -2,49 +2,54 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def visualize_ver_transf(dataset, version, n_series, transf):
-    with open(f'{dataset}_version_{version}_10samples.npy', 'rb') as f_new, open(f'{dataset}_original.npy', 'rb') as f:
-        y = np.load(f)
-        y_new = np.load(f_new)
-    
-    fig, ax = plt.subplots(2, int(np.floor(n_series/2)), sharex='all')
-    ax = ax.ravel()
+class Visualizer:
 
-    for i in range(y_new.shape[0]):
-        for j in range(n_series):
-            if i % 9 == 0 and not i == 0:
-                ax[j].plot(y[i, :, j], label='original', color='darkorange')
-                ax[j].set_title(f'{transf[j]}, s={j}')
-            ax[j].plot(y_new[i, :, j], color='darkblue', alpha=0.3)
+    def __init__(self, n_series, dataset, n_versions):
+        self.n_series = n_series
+        self.dataset = dataset
+        self.n_versions = n_versions
 
-    plt.legend()
-    fig.suptitle(f'10 samples of {n_series} of the transformed series')
-    plt.show()
+    def _read_files(self, method):
+        with open(f'./datasets/transformed_datasets/{self.dataset}_original.npy', 'rb') as f:
+            self.y = np.load(f)
 
+        y_new = []
+        for version in range(1, self.n_versions+1):
+            with open(f'./datasets/transformed_datasets/{self.dataset}_version_{version}_10samples_{method}.npy', 'rb') as f_new:
+                y_ver = np.load(f_new)
+                y_new.append(y_ver)
+        self.y_new = np.array(y_new)
 
-def visualize_series_transf(dataset, n_series, n_versions, transf):
-    with open(f'{dataset}_original.npy', 'rb') as f:
-        y = np.load(f)
+    def visualize_ver_transf(self, version, transf, method):
+        self._read_files(method=method)
+        fig, ax = plt.subplots(2, int(np.floor(self.n_series/2)), sharex='all')
+        ax = ax.ravel()
 
-    y_ver = []
-    for version in range(1, n_versions+1):
-        with open(f'{dataset}_version_{version}_10samples.npy', 'rb') as f_new:
-            y_new = np.load(f_new)
-            y_ver.append(y_new)
-    y_ver = np.array(y_ver)
+        for i in range(self.y_new.shape[1]):
+            for j in range(self.n_series):
+                if i % 9 == 0 and not i == 0:
+                    ax[j].plot(self.y[i, :, j], label='original', color='darkorange')
+                    ax[j].set_title(f'{transf[version, j]}, s={j}')
+                ax[j].plot(self.y_new[version, i, :, j], color='darkblue', alpha=0.3)
 
-    _, ax = plt.subplots(2, int(np.floor(n_series/2)), sharex=True)
-    ax = ax.ravel()
+        plt.legend()
+        fig.suptitle(f'10 samples of {self.n_series} of the transformed series')
+        plt.show()
 
-    colors = plt.cm.Blues_r(np.linspace(0, 0.65, n_versions))[::-1]
+    def visualize_series_transf(self, transf, method):
+        self._read_files(method=method)
+        _, ax = plt.subplots(2, int(np.floor(self.n_series/2)), sharex=True)
+        ax = ax.ravel()
 
-    for i in range(y_ver.shape[0]):
-        for j in range(n_series):
-            if (i+1) % 6 == 0:
-                ax[j].plot(y[i, :, j], label='original', color='darkorange')
-            ax[j].plot(y_ver[i, 0, :, j], label=f'version {i}', color=colors[i])
-            ax[j].set_title(f'Series {j}, [{"".join(list(transf[:,j].astype("<U1")))}]')
-    plt.legend()
-    plt.show()
+        colors = plt.cm.Blues_r(np.linspace(0, 0.65, self.n_versions))[::-1]
+
+        for i in range(self.y_new.shape[0]):
+            for j in range(self.n_series):
+                if (i+1) % 6 == 0:
+                    ax[j].plot(self.y[i, :, j], label='original', color='darkorange')
+                ax[j].plot(self.y_new[i, 0, :, j], label=f'version {i}', color=colors[i])
+                ax[j].set_title(f'Series {j}, [{"".join(list(transf[:,j].astype("<U1")))}]')
+        plt.legend()
+        plt.show()
 
 

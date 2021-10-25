@@ -1,8 +1,8 @@
-from manipulate_data import manipulate_data
+from manipulate_data import ManipulateData
 import numpy as np
 
 
-class create_new_version_dataset():
+class CreateNewVersionDataset():
     """
     Create a new version of a dataset. It works by performing one
     one transformation randomly chosen from a list of possible
@@ -20,15 +20,18 @@ class create_new_version_dataset():
         sample - sample of the dataset created, for dataset version 1, for instance, we create 10 different samples
     """
 
-    def __init__(self, y, transformations, version, sample):
+    def __init__(self, y, transformations, version, sample, parameters):
         self.y = y
         self.transformations = transformations
         self.version = version
         self.sample = sample
+        self.parameters = parameters
 
     def apply_transformations(self):
         y_new = np.zeros((self.y.shape[0], self.y.shape[1]))
         for i in range(self.y.shape[1]):
-            y_new[:, i] = manipulate_data(self.y[:, i].reshape(-1, 1), self.transformations[i]).apply_transf()
+            y_new[:, i] = ManipulateData(self.y[:, i].reshape(-1, 1),
+                                         self.transformations[i],
+                                         self.parameters[i]).apply_transf()
         
         return y_new
