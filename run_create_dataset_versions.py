@@ -2,7 +2,6 @@ from datasets.pre_processing_datasets import preprocess_datasets as ppc
 from create_new_dataset_versions import CreateNewVersionDataset as cnvd
 import numpy as np
 from visualize_transformed_datasets import Visualizer
-import os
 
 
 class CreateNewVersion:
@@ -74,5 +73,5 @@ class CreateNewVersion:
         for i in range(len(self.transformations)):
             methods.append(f'single_transf_{self.transformations[i]}')
             self._create_new_version(transfs[i], params[i], f'single_transf_{self.transformations[i]}')
+            self._visualize_transf_series(version_to_plot=1, transf=transfs[i, :, 0, :], method=methods[i])
         print(f'\nSUCCESS: Stored {transfs.shape[0]*transfs.shape[1]*transfs.shape[2]} transformed datasets')
-        self._visualize_transf_series(version_to_plot=1, transf=transfs[0, :, 0, :], method=methods[i])
