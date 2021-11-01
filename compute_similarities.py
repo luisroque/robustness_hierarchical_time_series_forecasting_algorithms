@@ -14,3 +14,7 @@ class ComputeSimilarities:
             for j in range(i+1, self.dataset.shape[1]):
                 res.append(similarity_model.estimate_similarity_two_series(self.dataset[:, i], self.dataset[:, j]))
         return np.array(res)
+
+
+
+

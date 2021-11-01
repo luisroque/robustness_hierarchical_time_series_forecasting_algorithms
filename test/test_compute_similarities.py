@@ -6,8 +6,7 @@ from similarity_model import SimilarityModel
 
 class TestComputeSimilarities(unittest.TestCase):
 
-    def __init__(self, methodName="runTest"):
-        super().__init__(methodName)
+    def setUp(self):
         self.n_points = 10
         self.n_series = 100
         self.base_dataset = np.tile(np.arange(10).reshape(1, -1), (100, 1)).T
