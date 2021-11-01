@@ -9,10 +9,10 @@ class CreateNewVersion:
     def __init__(self, dataset):
         self.dataset = dataset
         self.transformations = ['jitter', 'scaling', 'magnitude_warp', 'time_warp']
-        self.parameters = {"jitter": 0.1,
-                           "scaling": 0.1,
-                           "magnitude_warp": 0.1,
-                           "time_warp": 0.1}
+        self.parameters = {"jitter": 0.5,
+                           "scaling": 0.02,
+                           "magnitude_warp": 0.02,
+                           "time_warp": 0.02}
         self.data = self.get_dataset()
         self.n_s = 10 # number of samples per version
         self.n = self.data['train']['n'] # number of points in each series
@@ -35,7 +35,7 @@ class CreateNewVersion:
         return ppc(self.dataset).apply_preprocess()
 
     def _visualize_transf_series(self, version_to_plot, transf, method):
-        self.visualizer.visualize_ver_transf(version=version_to_plot, transf=transf, method=method)
+        # self.visualizer.visualize_ver_transf(version=version_to_plot, transf=transf, method=method)
         self.visualizer.visualize_series_transf(transf=transf, method=method)
 
     def _get_parameters_map(self, transfs):
@@ -69,9 +69,7 @@ class CreateNewVersion:
         transfs = np.tile(np.array(self.transformations).reshape(-1, 1), (6, 10, 1, 32)).transpose(2, 0, 1, 3)
         params = self._get_parameters_map(transfs)
         params = np.arange(1, 7).reshape((1, -1, 1, 1)) * params
-        methods = []
         for i in range(len(self.transformations)):
-            methods.append(f'single_transf_{self.transformations[i]}')
             self._create_new_version(transfs[i], params[i], f'single_transf_{self.transformations[i]}')
-            self._visualize_transf_series(version_to_plot=1, transf=transfs[i, :, 0, :], method=methods[i])
+            self._visualize_transf_series(version_to_plot=1, transf=transfs[i, :, 0, :], method=f'single_transf_{self.transformations[i]}')
         print(f'\nSUCCESS: Stored {transfs.shape[0]*transfs.shape[1]*transfs.shape[2]} transformed datasets')

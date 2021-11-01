@@ -11,7 +11,8 @@ class ManipulateData:
         self.sigma = parameters
 
     def _jitter(self):
-        return np.squeeze(self.x) + np.random.normal(loc=0., scale=self.sigma, size=self.x.shape[0])
+        sigma = np.std(self.x, axis=0)/4*self.sigma
+        return np.squeeze(self.x) + np.random.normal(loc=0., scale=sigma, size=self.x.shape[0])
 
     def _scaling(self):
         factor = np.random.normal(loc=1., scale=self.sigma, size=(self.x.shape[0]))
