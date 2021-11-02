@@ -34,3 +34,20 @@ class TestEvaluateSimilarityWithGroups(unittest.TestCase):
         compute_similarities = ComputeSimilaritiesSummaryMetrics(self.base_dataset, self.groups_idx) \
             .compute_similarities_for_every_group_element()
         self.assertDictEqual(similarities, compute_similarities)
+
+    def test_evaluate_avg_similarity_for_every_specific_group_element(self):
+        similarities = {'group1': 10.824798611747456,
+                        'group2': 10.547072319044359,
+                        'group3': 10.547072319044359}
+        compute_similarities = ComputeSimilaritiesSummaryMetrics(self.base_dataset, self.groups_idx) \
+            .compute_avg_similarities_for_every_group()
+        self.assertDictEqual(similarities, compute_similarities)
+
+    def test_evaluate_avg_similarity_for_every_specific_group_element_and_all(self):
+        similarities = {'group1': 10.824798611747456,
+                        'group2': 10.547072319044359,
+                        'group3': 10.547072319044359,
+                        'all': 10.639647749945391}
+        compute_similarities = ComputeSimilaritiesSummaryMetrics(self.base_dataset, self.groups_idx) \
+            .compute_avg_similarities()
+        self.assertEqual(similarities, compute_similarities)
