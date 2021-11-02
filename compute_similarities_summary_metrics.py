@@ -4,9 +4,10 @@ import numpy as np
 
 class ComputeSimilaritiesSummaryMetrics:
 
-    def __init__(self, dataset, group_dict_idxs):
+    def __init__(self, dataset, group_dict_idxs, transformed_dataset=None):
         self.dataset = dataset
         self.group_dict_idxs = group_dict_idxs
+        self.transformed_dataset = transformed_dataset
 
     def compute_similarities_within_group(self, group, group_val):
         similarities = ComputeSimilarities(
@@ -38,6 +39,14 @@ class ComputeSimilaritiesSummaryMetrics:
         res_dict = self.compute_avg_similarities_for_every_group()
         res_dict['all'] = np.mean(list(res_dict.values()))
         return res_dict
+
+    def compute_avg_similarities_transf_dataset_vs_original(self):
+        avg_sim = []
+        for i in range(self.transformed_dataset.shape[1]):
+            avg_sim.append(ComputeSimilarities(dataset=self.dataset, transf_series=self.transformed_dataset[:, i])
+                           .compute_similarity_single_series_and_dataset())
+        return np.mean(avg_sim)
+
 
 
 

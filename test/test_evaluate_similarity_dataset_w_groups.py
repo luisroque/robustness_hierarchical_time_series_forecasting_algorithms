@@ -10,6 +10,7 @@ class TestEvaluateSimilarityWithGroups(unittest.TestCase):
         self.n_points = 10
         self.n_series = 20
         self.base_dataset = np.random.normal(0, 1, size=(self.n_points, self.n_series))
+        self.transf_dataset = np.random.normal(0, 2, size=(self.n_points, self.n_series))
         self.groups = 3
         self.groups_idx = {'group1': np.arange(self.n_series) % 3,
                            'group2': np.arange(self.n_series) % 2,
@@ -51,3 +52,13 @@ class TestEvaluateSimilarityWithGroups(unittest.TestCase):
         compute_similarities = ComputeSimilaritiesSummaryMetrics(self.base_dataset, self.groups_idx) \
             .compute_avg_similarities()
         self.assertEqual(similarities, compute_similarities)
+
+    def test_calculate_similarity_between_transformed_series_and_base_dataset(self):
+        similarities = 17.07120129561533
+        compute_similarities = ComputeSimilaritiesSummaryMetrics(dataset=self.base_dataset,
+                                                                 group_dict_idxs=self.groups_idx,
+                                                                 transformed_dataset=self.transf_dataset) \
+            .compute_avg_similarities_transf_dataset_vs_original()
+        self.assertEqual(similarities, compute_similarities)
+
+

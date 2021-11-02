@@ -4,8 +4,9 @@ import numpy as np
 
 class ComputeSimilarities:
 
-    def __init__(self, dataset):
+    def __init__(self, dataset, transf_series=None):
         self.dataset = dataset
+        self.transf_series = transf_series
 
     def compute_similarity_all_pairs(self):
         similarity_model = SimilarityModel()
@@ -15,6 +16,12 @@ class ComputeSimilarities:
                 res.append(similarity_model.estimate_similarity_two_series(self.dataset[:, i], self.dataset[:, j]))
         return np.array(res)
 
+    def compute_similarity_single_series_and_dataset(self):
+        similarity_model = SimilarityModel()
+        res = []
+        for i in range(self.dataset.shape[1]):
+            res.append(similarity_model.estimate_similarity_two_series(self.dataset[:, i], self.transf_series))
+        return np.mean(res)
 
 
 

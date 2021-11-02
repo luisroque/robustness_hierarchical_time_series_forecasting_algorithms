@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 
 class Visualizer:
 
-    def __init__(self, n_series, dataset, n_versions):
+    def __init__(self, dataset, n_versions=6, n_series=6):
         self.n_series = n_series
         self.dataset = dataset
         self.n_versions = n_versions
@@ -14,15 +15,16 @@ class Visualizer:
             self.y = np.load(f)
 
         y_new = []
-        for version in range(1, self.n_versions+1):
-            with open(f'./datasets/transformed_datasets/{self.dataset}_version_{version}_10samples_{method}.npy', 'rb') as f_new:
+        for version in range(1, self.n_versions + 1):
+            with open(f'./datasets/transformed_datasets/{self.dataset}_version_{version}_10samples_{method}.npy',
+                      'rb') as f_new:
                 y_ver = np.load(f_new)
                 y_new.append(y_ver)
         self.y_new = np.array(y_new)
 
     def visualize_ver_transf(self, version, transf, method):
         self._read_files(method=method)
-        fig, ax = plt.subplots(2, int(np.floor(self.n_series/2)), sharex='all')
+        fig, ax = plt.subplots(2, int(np.floor(self.n_series / 2)), sharex='all')
         ax = ax.ravel()
 
         for i in range(self.y_new.shape[1]):
@@ -38,18 +40,32 @@ class Visualizer:
 
     def visualize_series_transf(self, transf, method):
         self._read_files(method=method)
-        _, ax = plt.subplots(2, int(np.floor(self.n_series/2)), sharex=True)
+        _, ax = plt.subplots(2, int(np.floor(self.n_series / 2)), sharex=True)
         ax = ax.ravel()
 
         colors = plt.cm.Blues_r(np.linspace(0, 0.65, self.n_versions))[::-1]
 
         for i in range(self.y_new.shape[0]):
             for j in range(self.n_series):
-                if (i+1) % 6 == 0:
+                if (i + 1) % 6 == 0:
                     ax[j].plot(self.y[i, :, j], label='original', color='darkorange')
                 ax[j].plot(self.y_new[i, 0, :, j], label=f'version {i}', color=colors[i])
-                ax[j].set_title(f'Series {j}, [{"".join(list(transf[:,j].astype("<U1")))}]')
+                ax[j].set_title(f'Series {j}, [{"".join(list(transf[:, j].astype("<U1")))}]')
         plt.legend()
         plt.show()
 
+    @staticmethod
+    def visualize_avg_distance_by_version(dict_transf_version_dist, title):
+        df = pd.DataFrame.from_dict({i: dict_transf_version_dist[i]
+                                    for i in dict_transf_version_dist.keys()},
+                                    orient='index')
+        df.plot.bar(colormap='RdBu', rot=0)
+        plt.title(title)
+        plt.show()
 
+    @staticmethod
+    def visualize_transformations_by_version(dict_transf_version_dist, title):
+        df = pd.DataFrame.from_dict(dict_transf_version_dist, orient='index')
+        df.plot.line(colormap='RdBu', rot=0, legend=False)
+        plt.title(title)
+        plt.show()
