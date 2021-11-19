@@ -25,7 +25,7 @@ setup(
     keywords=['python', 'time series', 'hierarchical', 'forecasting', 'augmentation', 'machine learning'],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
-        "Intended Audience :: Researchers",
+        "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering",
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
