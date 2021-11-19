@@ -1,9 +1,8 @@
-from datasets.pre_processing_datasets import preprocess_datasets as ppc
-from create_new_dataset_versions import CreateNewVersionDataset as cnvd
+from ..preprocessing.pre_processing_datasets import PreprocessDatasets as ppc
+from .apply_transformations_dataset import ApplyTransformationsDataset as cnvd
 import numpy as np
-from visualize_transformed_datasets import Visualizer
-from compute_similarities_summary_metrics import ComputeSimilaritiesSummaryMetrics
-import pandas as pd
+from augmentation.visualization.visualize_transformed_datasets import Visualizer
+from .compute_similarities_summary_metrics import ComputeSimilaritiesSummaryMetrics
 
 
 class CreateNewVersion:

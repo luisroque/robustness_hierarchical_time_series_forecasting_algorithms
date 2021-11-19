@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-class data_transform():
+class DataTransform:
     def __init__(self, groups):
         self.g = groups
         self.mu_data = np.mean(self.g['train']['data'], axis=0)

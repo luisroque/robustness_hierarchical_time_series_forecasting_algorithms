@@ -4,7 +4,7 @@ import calendar
 from pathlib import Path
 
 
-class preprocess_datasets():
+class PreprocessDatasets:
 
     def __init__(self, dataset):
         self.dataset = dataset

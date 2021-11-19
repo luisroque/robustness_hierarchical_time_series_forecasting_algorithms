@@ -1,8 +1,0 @@
-from run_create_dataset_versions import CreateNewVersion
-
-# Create new version of a dataset using same transformation per version
-new_version_builder = CreateNewVersion('prison')
-new_version_builder.create_new_version_single_transf()
-new_version_builder.compute_distances_transformed_datasets()
-new_version_builder.compute_distances_transf_vs_original_by_transf_and_ver()
-new_version_builder.create_new_version_using_n_random_transformations(100)

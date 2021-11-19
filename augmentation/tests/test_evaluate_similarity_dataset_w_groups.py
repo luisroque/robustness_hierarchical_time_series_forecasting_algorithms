@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from compute_similarities_summary_metrics import ComputeSimilaritiesSummaryMetrics
+from augmentation.transformations.compute_similarities_summary_metrics import ComputeSimilaritiesSummaryMetrics
 
 
 class TestEvaluateSimilarityWithGroups(unittest.TestCase):

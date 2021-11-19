@@ -1,4 +1,4 @@
-from compute_similarities import ComputeSimilarities
+from .compute_similarities import ComputeSimilarities
 import numpy as np
 
 

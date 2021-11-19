@@ -1,4 +1,4 @@
-from similarity_model import SimilarityModel
+from .similarity_model import SimilarityModel
 import numpy as np
 
 

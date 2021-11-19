@@ -1,8 +1,8 @@
-from manipulate_data import ManipulateData
+from .manipulate_data import ManipulateData
 import numpy as np
 
 
-class CreateNewVersionDataset():
+class ApplyTransformationsDataset:
     """
     Create a new version of a dataset. It works by performing one
     one transformation randomly chosen from a list of possible
