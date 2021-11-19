@@ -1,5 +1,5 @@
 import pandas as pd
-from .pre_processing import generate_groups_data_flat, generate_groups_data_matrix
+from .utils import generate_groups_data_flat, generate_groups_data_matrix
 import calendar
 from pathlib import Path
 
@@ -55,5 +55,5 @@ class PreprocessDatasets:
         return groups
 
     def apply_preprocess(self):
-        dataset_new = getattr(preprocess_datasets, '_' + self.dataset)()
+        dataset_new = getattr(PreprocessDatasets, '_' + self.dataset)()
         return dataset_new
