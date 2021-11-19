@@ -13,7 +13,7 @@ with open(REQUIREMENTS_FILE) as f:
 
 # Setting up
 setup(
-    name="rts",
+    name="tsaugmentation",
     version=VERSION,
     author="Luis Roque",
     author_email="<roque0luis@gmail.com>",
