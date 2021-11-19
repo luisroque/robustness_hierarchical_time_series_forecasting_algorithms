@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from augmentation.transformations.similarity_model import SimilarityModel
+from tsaugmentation.transformations.similarity_model import SimilarityModel
 
 
 class TestSimilarityMeasure(unittest.TestCase):

@@ -1,7 +1,7 @@
 from ..preprocessing.pre_processing_datasets import PreprocessDatasets as ppc
 from .apply_transformations_dataset import ApplyTransformationsDataset as cnvd
 import numpy as np
-from augmentation.visualization.visualize_transformed_datasets import Visualizer
+from tsaugmentation.visualization.visualize_transformed_datasets import Visualizer
 from .compute_similarities_summary_metrics import ComputeSimilaritiesSummaryMetrics
 
 

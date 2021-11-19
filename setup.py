@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 from os.path import dirname, join, realpath
 
-VERSION = '0.0.1'
-DESCRIPTION = 'Robust time series augmentation for forecasting algorithms'
+VERSION = '0.0.2'
+DESCRIPTION = 'Robust time series tsaugmentation for forecasting algorithms'
 LONG_DESCRIPTION = 'A package that allows to augment your time series dataset ' \
                    'to test the robustness of forecasting algorithms'
 
@@ -22,7 +22,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
     install_requires=install_reqs,
-    keywords=['python', 'time series', 'hierarchical', 'forecasting', 'augmentation', 'machine learning'],
+    keywords=['python', 'time series', 'hierarchical', 'forecasting', 'tsaugmentation', 'machine learning'],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Science/Research",

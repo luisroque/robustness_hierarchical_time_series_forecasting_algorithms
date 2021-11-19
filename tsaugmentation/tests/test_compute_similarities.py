@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
-from augmentation.transformations.compute_similarities import ComputeSimilarities
-from augmentation.transformations.similarity_model import SimilarityModel
+from tsaugmentation.transformations.compute_similarities import ComputeSimilarities
+from tsaugmentation.transformations.similarity_model import SimilarityModel
 
 
 class TestComputeSimilarities(unittest.TestCase):
