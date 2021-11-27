@@ -3,9 +3,10 @@ from .apply_transformations_dataset import ApplyTransformationsDataset as cnvd
 import numpy as np
 from tsaugmentation.visualization.visualize_transformed_datasets import Visualizer
 from .compute_similarities_summary_metrics import ComputeSimilaritiesSummaryMetrics
+from pathlib import Path
 
 
-class CreateNewVersion:
+class CreateTransformedVersions:
 
     def __init__(self, dataset):
         self.dataset = dataset
@@ -26,15 +27,20 @@ class CreateNewVersion:
         self.n_versions = 6
         self.n_samples = 10
         self.visualizer = Visualizer(dataset=self.dataset, n_versions=self.n_versions, n_series=6)
-        # y_new_all shape = (random_transformation + n_transformations, n_versions, n_points, n_series)
         self.y_new_all = np.zeros((len(self.transformations_w_random), self.n_versions, self.n_samples, self.n, self.s))
+        self._create_directories()
+
+    @staticmethod
+    def _create_directories():
+        # Create directory to store transformed datasets if does not exist
+        Path("./transformed_datasets").mkdir(parents=True, exist_ok=True)
 
     def _save_original_file(self):
-        with open(f'./datasets/transformed_datasets/{self.dataset}_original.npy', 'wb') as f:
+        with open(f'./transformed_datasets/{self.dataset}_original.npy', 'wb') as f:
             np.save(f, self.y)
 
     def _save_version_file(self, y_new, version, sample, method):
-        with open(f'./datasets/transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}.npy', 'wb') as f:
+        with open(f'./transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}.npy', 'wb') as f:
             np.save(f, y_new)
 
     def get_dataset(self):

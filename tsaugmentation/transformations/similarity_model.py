@@ -1,4 +1,8 @@
+from .utils import block_print, enable_print
+
+block_print()
 from dtw import dtw
+enable_print()
 
 
 class SimilarityModel:
