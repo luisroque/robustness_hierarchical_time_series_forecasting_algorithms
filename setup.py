@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from os.path import dirname, join, realpath
+import re
 
-VERSION = '0.0.2'
 DESCRIPTION = 'Robust time series tsaugmentation for forecasting algorithms'
 LONG_DESCRIPTION = 'A package that allows to augment your time series dataset ' \
                    'to test the robustness of forecasting algorithms'
@@ -11,10 +11,21 @@ REQUIREMENTS_FILE = join(PROJECT_ROOT, "requirements.txt")
 with open(REQUIREMENTS_FILE) as f:
     install_reqs = f.read().splitlines()
 
+
+def get_version():
+    VERSIONFILE = join("tsaugmentation", "__init__.py")
+    lines = open(VERSIONFILE).readlines()
+    version_regex = r"^__version__ = ['\"]([^'\"]*)['\"]"
+    for line in lines:
+        mo = re.search(version_regex, line, re.M)
+        if mo:
+            return mo.group(1)
+    raise RuntimeError(f"Unable to find version in {VERSIONFILE}.")
+
 # Setting up
 setup(
     name="tsaugmentation",
-    version=VERSION,
+    version=get_version(),
     author="Luis Roque",
     author_email="<roque0luis@gmail.com>",
     description=DESCRIPTION,

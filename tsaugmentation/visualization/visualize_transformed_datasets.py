@@ -11,12 +11,12 @@ class Visualizer:
         self.n_versions = n_versions
 
     def _read_files(self, method):
-        with open(f'./datasets/transformed_datasets/{self.dataset}_original.npy', 'rb') as f:
+        with open(f'./transformed_datasets/{self.dataset}_original.npy', 'rb') as f:
             self.y = np.load(f)
 
         y_new = []
         for version in range(1, self.n_versions + 1):
-            with open(f'./datasets/transformed_datasets/{self.dataset}_version_{version}_10samples_{method}.npy',
+            with open(f'./transformed_datasets/{self.dataset}_version_{version}_10samples_{method}.npy',
                       'rb') as f_new:
                 y_ver = np.load(f_new)
                 y_new.append(y_ver)
