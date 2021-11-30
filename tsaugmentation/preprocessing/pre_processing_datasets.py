@@ -1,6 +1,5 @@
 import pandas as pd
 from .utils import generate_groups_data_flat, generate_groups_data_matrix
-import calendar
 from urllib import request
 from pathlib import Path
 import os
@@ -58,21 +57,22 @@ class PreprocessDatasets:
         data = self._get_dataset()
         if data.empty:
             return {}
-        data['Year'] = data['Year'].fillna(method='ffill')
 
-        d = dict((v,k) for k,v in enumerate(calendar.month_name))
-        data.Month = data.Month.map(d)
-        data = data.assign(t=pd.to_datetime(data[['Year', 'Month']].assign(day=1))).set_index('t')
-        data = data.drop(['Year', 'Month'], axis=1)
+        data['t'] = data['Date'].astype('datetime64[ns]')
+        data = data.drop('Date', axis=1)
+        data_pivot = data.pivot(index='t', columns=['state', 'zone', 'region', 'purpose'], values='Count')
 
         groups_input = {
-        'State': [0,1],
-        'Zone': [0,2],
-        'Region': [0,3],
-        'Purpose': [3,6]
+            'state': [0],
+            'zone': [1],
+            'region': [2],
+            'purpose': [3]
         }
 
-        groups = generate_groups_data_flat(data, groups_input, seasonality=12, h=12)
+        groups = generate_groups_data_flat(y=data_pivot,
+                                           groups_input=groups_input,
+                                           seasonality=12,
+                                           h=24)
         groups = generate_groups_data_matrix(groups)
         return groups
 
