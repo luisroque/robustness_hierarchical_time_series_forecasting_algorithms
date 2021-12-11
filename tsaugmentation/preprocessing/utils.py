@@ -108,5 +108,6 @@ def generate_groups_data_matrix(groups):
     groups['train']['n_series_idx'] = groups['train']['n_series_idx'].reshape(groups['train']['s'], groups['train']['n']).T[0,:]
 
     groups['predict']['n_series_idx'] = groups['predict']['n_series_idx'].reshape(groups['predict']['s'], groups['predict']['n']).T[0,:]
+    groups['predict']['data_matrix'] = groups['predict']['data'].reshape(groups['predict']['s'], groups['predict']['n']).T
 
     return groups
