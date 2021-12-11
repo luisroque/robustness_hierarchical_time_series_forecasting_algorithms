@@ -28,6 +28,7 @@ class DataTransform:
 
 
 def generate_groups_data_flat(y,
+                         dates,
                          groups_input,
                          seasonality,
                          h):
@@ -80,6 +81,7 @@ def generate_groups_data_flat(y,
 
     groups['seasonality'] = seasonality
     groups['h'] = h
+    groups['dates'] = dates
 
     print("Number of groups: " + str(len(groups['train']['groups_names'])))
     for name,group in groups['train']['groups_names'].items():

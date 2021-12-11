@@ -36,9 +36,10 @@ class PreprocessDatasets:
         prison = self._get_dataset()
         if prison.empty:
             return {}
+
         prison = prison.drop('Unnamed: 0', axis =1)
         prison['t'] = prison['t'].astype('datetime64[ns]')
-        prison_pivot = prison.pivot(index='t',columns=['state', 'gender', 'legal'], values='count')
+        prison_pivot = prison.pivot(index='t', columns=['state', 'gender', 'legal'], values='count')
 
         groups_input = {
         'state': [0],
@@ -46,8 +47,9 @@ class PreprocessDatasets:
         'legal': [2]
         }
 
-        groups = generate_groups_data_flat(y = prison_pivot, 
-                                   groups_input = groups_input, 
+        groups = generate_groups_data_flat(y=prison_pivot,
+                                   dates=list(prison_pivot.index),
+                                   groups_input=groups_input,
                                    seasonality=4, 
                                    h=8)
         groups = generate_groups_data_matrix(groups)
@@ -70,6 +72,7 @@ class PreprocessDatasets:
         }
 
         groups = generate_groups_data_flat(y=data_pivot,
+                                           dates=list(data.index),
                                            groups_input=groups_input,
                                            seasonality=12,
                                            h=24)
