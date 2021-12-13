@@ -70,9 +70,8 @@ class PreprocessDatasets:
             'region': [2],
             'purpose': [3]
         }
-
         groups = generate_groups_data_flat(y=data_pivot,
-                                           dates=list(data.index),
+                                           dates=list(data_pivot.index),
                                            groups_input=groups_input,
                                            seasonality=12,
                                            h=24)
