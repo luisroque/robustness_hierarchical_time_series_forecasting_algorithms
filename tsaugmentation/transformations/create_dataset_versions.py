@@ -18,14 +18,13 @@ class CreateTransformedVersions:
                            "magnitude_warp": 0.02,
                            "time_warp": 0.02}
         self.data = self.get_dataset()
-        self.n_s = 10 # number of samples per version
         self.n = self.data['train']['n'] # number of points in each series
         self.s = self.data['train']['s'] # number of series in dataset
-        self.y = np.tile(np.expand_dims(self.data['train']['data'], axis=0), (self.n_s, 1, 1))
+        self.n_samples = 10
+        self.y = np.tile(np.expand_dims(self.data['train']['data'], axis=0), (self.n_samples, 1, 1))
         self.groups_idx = self.data['train']['groups_idx']
         self._save_original_file()
         self.n_versions = 6
-        self.n_samples = 10
         self.visualizer = Visualizer(dataset=self.dataset, n_versions=self.n_versions, n_series=6)
         self.y_new_all = np.zeros((len(self.transformations_w_random), self.n_versions, self.n_samples, self.n, self.s))
         self._create_directories()
@@ -57,8 +56,8 @@ class CreateTransformedVersions:
     def _create_new_version(self, transfs, parameters, method, n_versions=None, save=True):
         if not n_versions:
             n_versions = self.n_versions
-        y_new = np.zeros((self.n_s, self.n, self.s))
-        y_new_all = np.zeros((n_versions, self.n_s, self.n, self.s))
+        y_new = np.zeros((self.n_samples, self.n, self.s))
+        y_new_all = np.zeros((n_versions, self.n_samples, self.n, self.s))
         for i in range(1, n_versions+1):
             # Create 6 different versions of a dataset
             for j in range(1, self.n_samples+1):
@@ -74,7 +73,7 @@ class CreateTransformedVersions:
         return y_new_all
 
     def _create_new_version_random(self):
-        transfs = np.tile(np.random.choice(self.transformations, size=(6, 1, 32)), (1, 10, 1)) # (n_versions, n_samples, n_series)
+        transfs = np.tile(np.random.choice(self.transformations, size=(self.n_versions, 1, self.s)), (1, self.n_samples, 1)) # (n_versions, n_samples, n_series)
         params = self._get_parameters_map(transfs)
         method = 'random'
         self.y_new_all[0] = self._create_new_version(transfs, params, method)
@@ -83,7 +82,7 @@ class CreateTransformedVersions:
 
     def create_new_version_single_transf(self):
         self._create_new_version_random()
-        transfs = np.tile(np.array(self.transformations).reshape(-1, 1), (6, 10, 1, 32)).transpose(2, 0, 1, 3)
+        transfs = np.tile(np.array(self.transformations).reshape(-1, 1), (self.n_versions, self.n_samples, 1, self.s)).transpose(2, 0, 1, 3)
         params = self._get_parameters_map(transfs)
         params = np.arange(1, 7).reshape((1, -1, 1, 1)) * params
         for i in range(len(self.transformations)):
@@ -136,7 +135,7 @@ class CreateTransformedVersions:
         Method to create new versions of the dataset by applying cumulatively transformations to the data
         without storing them to a file (only stored in memory)
         """
-        transfs = np.tile(np.random.choice(self.transformations, size=(n_versions, 1, 32)), (1, 10, 1)) # (n_versions, n_samples, n_series)
+        transfs = np.tile(np.random.choice(self.transformations, size=(n_versions, 1, self.s)), (1, self.n_samples, 1)) # (n_versions, n_samples, n_series)
         params = self._get_parameters_map(transfs)
         method = 'random'
         y_new_all = self._create_new_version(transfs=transfs,
