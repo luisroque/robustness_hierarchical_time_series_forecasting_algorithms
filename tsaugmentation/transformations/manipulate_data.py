@@ -22,7 +22,7 @@ class ManipulateData:
         random_warps = np.random.normal(loc=1.0, scale=self.sigma, size=knot+2)
         warp_steps = (np.linspace(0, self.x.shape[0]-1., num=knot+2))
         warper = np.array([CubicSpline(warp_steps, random_warps)(self.orig_steps)])
-        ret = self.x * warper.reshape(-1, 1)
+        ret = self.x * warper
         return np.squeeze(ret)
 
     def _time_warp(self, knot=4):
@@ -30,8 +30,7 @@ class ManipulateData:
         warp_steps = (np.linspace(0, self.x.shape[0]-1., num=knot+2))
 
         time_warp = CubicSpline(warp_steps, warp_steps * random_warps)(self.orig_steps)
-        scale = (self.x.shape[0]-1)/time_warp[-1]
-        ret = np.interp(self.orig_steps, np.clip(scale*time_warp, 0, self.x.shape[0]-1), np.squeeze(self.x))
+        ret = np.interp(self.orig_steps, np.clip(time_warp, 0, self.x.shape[0]-1), np.squeeze(self.x))
         return ret
     
     def apply_transf(self):
