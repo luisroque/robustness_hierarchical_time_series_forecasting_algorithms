@@ -22,7 +22,7 @@ class ManipulateData:
         random_warps = np.random.normal(loc=1.0, scale=self.sigma, size=knot+2)
         warp_steps = (np.linspace(0, self.x.shape[0]-1., num=knot+2))
         warper = np.array([CubicSpline(warp_steps, random_warps)(self.orig_steps)])
-        ret = self.x * warper
+        ret = self.x * warper.reshape(-1, 1)
         return np.squeeze(ret)
 
     def _time_warp(self, knot=4):

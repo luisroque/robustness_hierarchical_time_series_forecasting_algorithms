@@ -37,9 +37,9 @@ class PreprocessDatasets:
 
     def _prison(self):
         path = self._get_dataset()
-        prison = pd.read_csv(path, sep=",")
-        if prison.empty:
+        if not path:
             return {}
+        prison = pd.read_csv(path, sep=",")
 
         prison = prison.drop('Unnamed: 0', axis =1)
         prison['t'] = prison['t'].astype('datetime64[ns]')
@@ -61,9 +61,9 @@ class PreprocessDatasets:
 
     def _tourism(self):
         path = self._get_dataset()
-        tourism = pd.read_csv(path, sep=",")
-        if tourism.empty:
+        if not path:
             return {}
+        tourism = pd.read_csv(path, sep=",")
 
         tourism['t'] = tourism['Date'].astype('datetime64[ns]')
         tourism = tourism.drop('Date', axis=1)
@@ -85,6 +85,8 @@ class PreprocessDatasets:
 
     def _m5(self):
         path = self._get_dataset(file_type='zip')
+        if not path:
+            return {}
         with zipfile.ZipFile(path, 'r') as zip_ref:
             zip_ref.extractall('./original_datasets/')
 
