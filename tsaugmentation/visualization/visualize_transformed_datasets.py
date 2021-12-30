@@ -30,7 +30,7 @@ class Visualizer:
         for i in range(self.y_new.shape[1]):
             for j in range(self.n_series):
                 if i % 9 == 0 and not i == 0:
-                    ax[j].plot(self.y[i, :, j], label='original', color='darkorange')
+                    ax[j].plot(self.y[:, j], label='original', color='darkorange')
                     ax[j].set_title(f'{transf[version, j]}, s={j}')
                 ax[j].plot(self.y_new[version, i, :, j], color='darkblue', alpha=0.3)
 
@@ -48,7 +48,7 @@ class Visualizer:
         for i in range(self.y_new.shape[0]):
             for j in range(self.n_series):
                 if (i + 1) % 6 == 0:
-                    ax[j].plot(self.y[i, :, j], label='original', color='darkorange')
+                    ax[j].plot(self.y[:, j], label='original', color='darkorange')
                 ax[j].plot(self.y_new[i, 0, :, j], label=f'version {i}', color=colors[i])
                 ax[j].set_title(f'Series {j}, [{"".join(list(transf[:, j].astype("<U1")))}]')
         plt.legend()
