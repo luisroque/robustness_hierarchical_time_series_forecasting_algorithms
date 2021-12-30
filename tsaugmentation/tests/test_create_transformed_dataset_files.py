@@ -11,9 +11,8 @@ from tsaugmentation.visualization.visualize_transformed_datasets import Visualiz
 class TestCreateTransformedDatasets(unittest.TestCase):
 
     def setUp(self):
-        self.dataset1 = 'prison'
-        self.dataset2 = 'tourism'
-        self.transformed_datasets = CreateTransformedVersions(self.dataset2)
+        self.dataset = 'tourism'
+        self.transformed_datasets = CreateTransformedVersions(self.dataset)
         self.transformed_datasets.parameters = {"jitter": 0.5,
                                            "scaling": 0.1,
                                            "magnitude_warp": 0.05,
@@ -26,19 +25,12 @@ class TestCreateTransformedDatasets(unittest.TestCase):
         shutil.rmtree("./original_datasets")
         shutil.rmtree("./transformed_datasets")
 
-    def test_create_new_version(self):
-        td = CreateTransformedVersions(self.dataset1)
-        y_new = td._create_new_version('test', save=False)
-        self.assertTrue(y_new.shape == (4, 6, 10, 40, 32))
-
     def test_create_correct_number_transformed_datasets_single_transf(self):
-        transformed_datasets = CreateTransformedVersions(self.dataset1)
-        transformed_datasets.create_new_version_single_transf()
         # shape (n_transformations + random_transf , n_versions, n_samples, n_points_train, n_series)
-        self.assertTrue(transformed_datasets.y_new_all.shape == (4, 6, 10, 40, 32))
+        self.assertTrue(self.transformed_datasets.y_new_all.shape == (4, 6, 10, 204, 304))
 
     def test_create_correct_number_transformed_datasets_FILES_single_transf(self):
-        transformed_datasets = CreateTransformedVersions(self.dataset1)
+        transformed_datasets = CreateTransformedVersions(self.dataset)
         transformed_datasets.create_new_version_single_transf()
         file_count = len([name for name in os.listdir('./transformed_datasets/')])
         self.assertEqual(file_count, 25)
@@ -77,7 +69,7 @@ class TestCreateTransformedDatasets(unittest.TestCase):
         self.assertEqual(mean_sim_time_warp_version_1, 5181.410707701956)
 
     def test_create_transformations_with_tourism_dataset_and_compare_with_files(self):
-        vi = Visualizer(self.dataset2)
+        vi = Visualizer(self.dataset)
         vi._read_files(method='single_transf_time_warp')
 
         for i in range(4):
