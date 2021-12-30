@@ -1,5 +1,5 @@
 from ..preprocessing.pre_processing_datasets import PreprocessDatasets as ppc
-from .apply_transformations_dataset import ApplyTransformationsDataset as cnvd
+from tsaugmentation.transformations.manipulate_data import ManipulateData
 import numpy as np
 from tsaugmentation.visualization.visualize_transformed_datasets import Visualizer
 from .compute_similarities_summary_metrics import ComputeSimilaritiesSummaryMetrics
@@ -21,13 +21,15 @@ class CreateTransformedVersions:
         self.n = self.data['train']['n'] # number of points in each series
         self.s = self.data['train']['s'] # number of series in dataset
         self.n_samples = 10
-        self.y = np.tile(np.expand_dims(self.data['train']['data'], axis=0), (self.n_samples, 1, 1))
+        self.y = self.data['train']['data']
         self.groups_idx = self.data['train']['groups_idx']
         self._save_original_file()
         self.n_versions = 6
         self.visualizer = Visualizer(dataset=self.dataset, n_versions=self.n_versions, n_series=6)
-        self.y_new_all = np.zeros((len(self.transformations_w_random), self.n_versions, self.n_samples, self.n, self.s))
+        self.y_new_all = np.zeros((len(self.transformations), self.n_versions, self.n_samples, self.n, self.s))
         self._create_directories()
+        self.transfs = np.tile(np.array(self.transformations).reshape(-1, 1),
+                          (self.n_versions, self.n_samples, 1, self.s)).transpose(2, 0, 1, 3)
 
     @staticmethod
     def _create_directories():
@@ -38,57 +40,43 @@ class CreateTransformedVersions:
         with open(f'./transformed_datasets/{self.dataset}_original.npy', 'wb') as f:
             np.save(f, self.y)
 
-    def _save_version_file(self, y_new, version, sample, method):
-        with open(f'./transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}.npy', 'wb') as f:
+    def _save_version_file(self, y_new, version, sample, transformation, method):
+        with open(f'./transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}_{transformation}.npy', 'wb') as f:
             np.save(f, y_new)
 
     def get_dataset(self):
         return ppc(self.dataset).apply_preprocess()
 
-    def _visualize_transf_series(self, version_to_plot, transf, method):
-        # self.visualizer.visualize_ver_transf(version=version_to_plot, transf=transf, method=method)
+    def _visualize_transf_series(self, transf, method):
         self.visualizer.visualize_series_transf(transf=transf, method=method)
 
     def _get_parameters_map(self, transfs):
         params = np.vectorize(self.parameters.get)(transfs)
         return params
 
-    def _create_new_version(self, transfs, parameters, method, n_versions=None, save=True):
+    def _create_new_version(self, method, n_versions=None, save=True):
         if not n_versions:
             n_versions = self.n_versions
-        y_new = np.zeros((self.n_samples, self.n, self.s))
-        y_new_all = np.zeros((n_versions, self.n_samples, self.n, self.s))
-        for i in range(1, n_versions+1):
-            # Create 6 different versions of a dataset
-            for j in range(1, self.n_samples+1):
-                # Create 10 samples of each version
-                y_new[j-1] = cnvd(self.y[j-1],
-                                  transfs[i-1, j-1],
-                                  version=i,
-                                  sample=j,
-                                  parameters=parameters[i-1, j-1]).apply_transformations()
-            if save:
-                self._save_version_file(y_new, i, j, method)
-            y_new_all[i-1] = y_new
-        return y_new_all
-
-    def _create_new_version_random(self):
-        transfs = np.tile(np.random.choice(self.transformations, size=(self.n_versions, 1, self.s)), (1, self.n_samples, 1)) # (n_versions, n_samples, n_series)
-        params = self._get_parameters_map(transfs)
-        method = 'random'
-        self.y_new_all[0] = self._create_new_version(transfs, params, method)
-        print(f'\nSUCCESS: Stored {transfs.shape[0]*transfs.shape[1]} transformed datasets using Random transformations')
-        self._visualize_transf_series(version_to_plot=1, transf=transfs[:, 0, :], method=method)
+        y_new = np.zeros((len(self.transformations), self.n_versions, self.n_samples, self.n, self.s))
+        params = self._get_parameters_map(self.transformations)
+        for k in range(len(self.transformations)):
+            # Create versions and samples per transformation
+            for i in range(1, n_versions+1):
+                # Create 6 different versions of a dataset
+                for j in range(1, self.n_samples+1):
+                    # Create 10 samples of each version
+                    y_new[k, i-1, j-1] = ManipulateData(self.y,
+                                                        self.transformations[k],
+                                                        parameters=params*i).apply_transf()
+                if save:
+                    self._save_version_file(y_new[k, i-1], i, j, self.transformations[k], method)
+        return y_new
 
     def create_new_version_single_transf(self):
-        self._create_new_version_random()
-        transfs = np.tile(np.array(self.transformations).reshape(-1, 1), (self.n_versions, self.n_samples, 1, self.s)).transpose(2, 0, 1, 3)
-        params = self._get_parameters_map(transfs)
-        params = np.arange(1, 7).reshape((1, -1, 1, 1)) * params
+        self.y_new_all = self._create_new_version(method='single_transf')
         for i in range(len(self.transformations)):
-            self.y_new_all[i+1] = self._create_new_version(transfs[i], params[i], f'single_transf_{self.transformations[i]}')
-            self._visualize_transf_series(version_to_plot=1, transf=transfs[i, :, 0, :], method=f'single_transf_{self.transformations[i]}')
-        print(f'\nSUCCESS: Stored {transfs.shape[0]*transfs.shape[1]*transfs.shape[2]} transformed datasets')
+            self._visualize_transf_series(transf=self.transfs[i, :, 0, :], method=f'single_transf_{self.transformations[i]}')
+        print(f'\nSUCCESS: Stored {self.transfs.shape[0]*self.transfs.shape[1]*self.transfs.shape[2]} transformed datasets')
 
     def _plot_distances(self, dict_transf_ver, title):
         self.visualizer.visualize_avg_distance_by_version(dict_transf_ver, title)
@@ -106,13 +94,13 @@ class CreateTransformedVersions:
 
     def compute_distances_transf_vs_original_by_transf_and_ver(self):
         res_dict = {}
-        for i in range(len(self.transformations_w_random)):
-            res_dict[self.transformations_w_random[i]] = {}
+        for i in range(len(self.transformations)):
+            res_dict[self.transformations[i]] = {}
             for j in range(self.n_versions):
                 compute_similarities = ComputeSimilaritiesSummaryMetrics(dataset=self.y,
                                                                          group_dict_idxs=self.groups_idx,
                                                                          transformed_dataset=self.y_new_all[i, j])
-                res_dict[self.transformations_w_random[i]][f'v{j+1}'] = compute_similarities\
+                res_dict[self.transformations[i]][f'v{j+1}'] = compute_similarities\
                     .compute_avg_similarities_transf_dataset_vs_original()
         title = 'Average distance of the transformed time series and the original dataset\n' \
                 'using DTW (by transformation and version)'
@@ -129,21 +117,3 @@ class CreateTransformedVersions:
 
     def _plot_transformations_by_version(self, dist_dict, title):
         self.visualizer.visualize_transformations_by_version(dist_dict, title)
-
-    def create_new_version_using_n_random_transformations(self, n_versions):
-        """
-        Method to create new versions of the dataset by applying cumulatively transformations to the data
-        without storing them to a file (only stored in memory)
-        """
-        transfs = np.tile(np.random.choice(self.transformations, size=(n_versions, 1, self.s)), (1, self.n_samples, 1)) # (n_versions, n_samples, n_series)
-        params = self._get_parameters_map(transfs)
-        method = 'random'
-        y_new_all = self._create_new_version(transfs=transfs,
-                                             parameters=params,
-                                             method=method,
-                                             n_versions=n_versions,
-                                             save=False)
-        dist_dict = self._compute_distances_transf_vs_original(n_versions, y_new_all)
-        title = 'Distance between transformed dataset and the original dataset\n' \
-                'by version'
-        self._plot_transformations_by_version(dist_dict, title)
