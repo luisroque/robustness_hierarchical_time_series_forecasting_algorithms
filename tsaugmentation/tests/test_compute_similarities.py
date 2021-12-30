@@ -40,3 +40,8 @@ class TestComputeSimilarities(unittest.TestCase):
         similarity = 109.0
         self.assertEqual(similarity, avg_sim)
 
+    def test_mean_similarity_elementwise_with_same_dataset(self):
+        avg_sim = ComputeSimilarities(dataset=self.base_dataset, transf_dataset=self.base_dataset) \
+            .compute_mean_similarity_elementwise()
+        self.assertEqual(0, avg_sim)
+
