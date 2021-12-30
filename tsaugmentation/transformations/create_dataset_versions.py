@@ -51,7 +51,7 @@ class CreateTransformedVersions:
         self.visualizer.visualize_series_transf(transf=transf, method=method)
 
     def _get_parameters_map(self, transfs):
-        params = np.vectorize(self.parameters.get)(transfs)
+        params = np.vectorize(self.parameters.get, otypes=['float'])(transfs)
         return params
 
     def _create_new_version(self, method, n_versions=None, save=True):
