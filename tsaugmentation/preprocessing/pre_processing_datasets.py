@@ -131,5 +131,5 @@ class PreprocessDatasets:
         return groups
 
     def apply_preprocess(self):
-        dataset_new = getattr(PreprocessDatasets, '_' + self.dataset)(self)
+        dataset_new = getattr(PreprocessDatasets, '_' + self.dataset.lower())(self)
         return dataset_new
