@@ -13,13 +13,11 @@ class TestPreprocessing(unittest.TestCase):
         preprocess_data = PreprocessDatasets(self.dataset)
         preprocess_data.api = self.wrong_api
         data = preprocess_data.apply_preprocess()
-        shutil.rmtree("./original_datasets")
-        shutil.rmtree("./transformed_datasets")
+        shutil.rmtree("./data/original_datasets")
         self.assertFalse(data)
 
     def test_get_dataset_prison(self):
         preprocess_data = PreprocessDatasets(self.dataset)
         data = preprocess_data.apply_preprocess()
-        shutil.rmtree("./original_datasets")
-        shutil.rmtree("./transformed_datasets")
+        shutil.rmtree("./data/original_datasets")
         self.assertTrue(data)

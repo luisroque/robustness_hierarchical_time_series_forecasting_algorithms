@@ -8,23 +8,34 @@ import numpy as np
 
 
 class PreprocessDatasets:
+    """
+    A class used to preprocess datasets
 
-    def __init__(self, dataset):
+    ...
+
+    Attributes
+    ----------
+    dataset : str
+        the dataset to download and preprocess
+    rel_dir : str
+        relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
+    """
+
+    def __init__(self, dataset, input_dir='./'):
         if dataset == 'm5':
             dataset = dataset.capitalize()
         self.dataset = dataset
+        self.input_dir = input_dir
         self.api = 'http://www.machinelearningtimeseries.com/apidownload/'
         self._create_directories()
 
-    @staticmethod
-    def _create_directories():
+    def _create_directories(self):
         # Create directory to store original datasets if does not exist
-        Path("./original_datasets").mkdir(parents=True, exist_ok=True)
-        # Create directory to store transformed datasets if does not exist
-        Path("./transformed_datasets").mkdir(parents=True, exist_ok=True)
+        Path(f'{self.input_dir}data').mkdir(parents=True, exist_ok=True)
+        Path(f'{self.input_dir}data/original_datasets').mkdir(parents=True, exist_ok=True)
 
     def _get_dataset(self, file_type='csv'):
-        path = f'./original_datasets/{self.dataset}.{file_type}'
+        path = f'{self.input_dir}data/original_datasets/{self.dataset}.{file_type}'
         # Download the original file if it does not exist
         if not os.path.isfile(path):
             try:
@@ -88,9 +99,9 @@ class PreprocessDatasets:
         if not path:
             return {}
         with zipfile.ZipFile(path, 'r') as zip_ref:
-            zip_ref.extractall('./original_datasets/')
+            zip_ref.extractall(f'{self.input_dir}data/original_datasets/')
 
-        INPUT_DIR = './original_datasets/m5-data'
+        INPUT_DIR = f'{self.input_dir}data/original_datasets/m5-data'
         cal = pd.read_csv(f'{INPUT_DIR}/calendar.csv')
         stv = pd.read_csv(f'{INPUT_DIR}/sales_train_validation.csv')
 

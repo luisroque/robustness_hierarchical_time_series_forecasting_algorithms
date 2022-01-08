@@ -4,19 +4,36 @@ import pandas as pd
 
 
 class Visualizer:
+    """
+    A class used to visualize transformations
 
-    def __init__(self, dataset, n_versions=6, n_series=6):
+    ...
+
+    Attributes
+    ----------
+    dataset : str
+        the original dataset to consider
+    rel_dir : str
+        relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
+    n_versions: int
+        number of versions created by applying the transformations
+    n_series: int
+        number of series to plot
+    """
+
+    def __init__(self, dataset, n_versions=6, n_series=6, input_dir='./'):
         self.n_series = n_series
         self.dataset = dataset
         self.n_versions = n_versions
+        self.input_dir = input_dir
 
     def _read_files(self, method):
-        with open(f'./transformed_datasets/{self.dataset}_original.npy', 'rb') as f:
+        with open(f'{self.input_dir}data/transformed_datasets/{self.dataset}_original.npy', 'rb') as f:
             self.y = np.load(f)
 
         y_new = []
         for version in range(1, self.n_versions + 1):
-            with open(f'./transformed_datasets/{self.dataset}_version_{version}_10samples_{method}.npy',
+            with open(f'{self.input_dir}data/transformed_datasets/{self.dataset}_version_{version}_10samples_{method}.npy',
                       'rb') as f_new:
                 y_ver = np.load(f_new)
                 y_new.append(y_ver)

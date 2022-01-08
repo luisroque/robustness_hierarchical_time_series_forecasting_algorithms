@@ -22,8 +22,8 @@ class TestCreateTransformedDatasets(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree("./original_datasets")
-        shutil.rmtree("./transformed_datasets")
+        shutil.rmtree("./data/original_datasets")
+        shutil.rmtree("./data/transformed_datasets")
 
     def test_create_correct_number_transformed_datasets_single_transf(self):
         # shape (n_transformations + random_transf , n_versions, n_samples, n_points_train, n_series)
@@ -32,7 +32,7 @@ class TestCreateTransformedDatasets(unittest.TestCase):
     def test_create_correct_number_transformed_datasets_FILES_single_transf(self):
         transformed_datasets = CreateTransformedVersions(self.dataset)
         transformed_datasets.create_new_version_single_transf()
-        file_count = len([name for name in os.listdir('./transformed_datasets/')])
+        file_count = len([name for name in os.listdir('./data/transformed_datasets/')])
         self.assertEqual(file_count, 25)
 
     def test_create_transformations_with_tourism_dataset(self):

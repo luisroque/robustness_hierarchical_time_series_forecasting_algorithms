@@ -15,7 +15,7 @@ class TestCreateTransformedDatasets(unittest.TestCase):
         vi = Visualizer(self.dataset)
         vi._read_files(method='single_transf_jitter')
 
-        shutil.rmtree("./original_datasets")
-        shutil.rmtree("./transformed_datasets")
+        shutil.rmtree("./data/original_datasets")
+        shutil.rmtree("./data/transformed_datasets")
         self.assertTrue(vi.y_new.shape == (6, 10, 40, 32))
         self.assertTrue(vi.y.shape == (40, 32))

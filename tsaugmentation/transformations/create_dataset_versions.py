@@ -7,9 +7,22 @@ from pathlib import Path
 
 
 class CreateTransformedVersions:
+    """
+    A class used to create new datasets from an original one using time series augmentation techniques
 
-    def __init__(self, dataset):
+    ...
+
+    Attributes
+    ----------
+    dataset : str
+        the original dataset to consider
+    rel_dir : str
+        relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
+    """
+
+    def __init__(self, dataset, input_dir='./'):
         self.dataset = dataset
+        self.input_dir = input_dir
         self.transformations = ['jitter', 'scaling', 'magnitude_warp', 'time_warp']
         self.transformations_w_random = self.transformations.copy()
         self.transformations_w_random.insert(0, 'random')
@@ -23,25 +36,25 @@ class CreateTransformedVersions:
         self.n_samples = 10
         self.y = self.data['train']['data']
         self.groups_idx = self.data['train']['groups_idx']
+        self._create_directories()
         self._save_original_file()
         self.n_versions = 6
         self.visualizer = Visualizer(dataset=self.dataset, n_versions=self.n_versions, n_series=6)
         self.y_new_all = np.zeros((len(self.transformations), self.n_versions, self.n_samples, self.n, self.s))
-        self._create_directories()
         self.transfs = np.tile(np.array(self.transformations).reshape(-1, 1),
                           (self.n_versions, self.n_samples, 1, self.s)).transpose(2, 0, 1, 3)
 
-    @staticmethod
-    def _create_directories():
+    def _create_directories(self):
         # Create directory to store transformed datasets if does not exist
-        Path("./transformed_datasets").mkdir(parents=True, exist_ok=True)
+        Path(f'{self.input_dir}data').mkdir(parents=True, exist_ok=True)
+        Path(f'{self.input_dir}data/transformed_datasets').mkdir(parents=True, exist_ok=True)
 
     def _save_original_file(self):
-        with open(f'./transformed_datasets/{self.dataset}_original.npy', 'wb') as f:
+        with open(f'{self.input_dir}data/transformed_datasets/{self.dataset}_original.npy', 'wb') as f:
             np.save(f, self.y)
 
     def _save_version_file(self, y_new, version, sample, transformation, method):
-        with open(f'./transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}_{transformation}.npy', 'wb') as f:
+        with open(f'{self.input_dir}data/transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}_{transformation}.npy', 'wb') as f:
             np.save(f, y_new)
 
     def get_dataset(self):
