@@ -109,7 +109,7 @@ class PreprocessDatasets:
         stv = stv.melt(list(stv.columns[:6]), var_name='day', value_vars=list(stv.columns[6:]), ignore_index=True)
 
         # Group by the groups to consider (product_id have 3049 unique)
-        stv = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'product_id', 'day']).sum('value').reset_index()
+        stv = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id', 'day']).sum('value').reset_index()
         days_calendar = np.concatenate((stv['day'].unique().reshape(-1, 1), cal['date'][:-56].unique().reshape(-1, 1)),
                                        axis=1)
         df_caldays = pd.DataFrame(days_calendar, columns=['day', 'Date'])
@@ -119,10 +119,10 @@ class PreprocessDatasets:
         stv['Date'] = stv['Date'].astype('datetime64[ns]')
 
         # Transform in weekly data
-        stv_weekly = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id']).resample('W', on='Date')['value'].sum()
+        stv_weekly = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id']).resample('W', on='Date')['value'].sum()
 
         stv_pivot = stv_weekly.reset_index().pivot(index='Date',
-                                                   columns=['dept_id', 'cat_id', 'store_id', 'state_id', 'product_id'],
+                                                   columns=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
                                                    values='value')
         stv_pivot = stv_pivot.fillna(0)
 
