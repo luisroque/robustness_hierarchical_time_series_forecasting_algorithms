@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 import zipfile
 import numpy as np
+import datetime
 
 
 class PreprocessDatasets:
@@ -33,6 +34,11 @@ class PreprocessDatasets:
         # Create directory to store original datasets if does not exist
         Path(f'{self.input_dir}data').mkdir(parents=True, exist_ok=True)
         Path(f'{self.input_dir}data/original_datasets').mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _floor(x, freq):
+        offset = x[0].ceil(freq) - x[0] + datetime.timedelta(days=-1)
+        return (x + offset).floor(freq) - offset
 
     def _get_dataset(self, file_type='csv'):
         path = f'{self.input_dir}data/original_datasets/{self.dataset}.{file_type}'
@@ -65,7 +71,7 @@ class PreprocessDatasets:
         groups = generate_groups_data_flat(y=prison_pivot,
                                    dates=list(prison_pivot.index),
                                    groups_input=groups_input,
-                                   seasonality=4, 
+                                   seasonality=4,
                                    h=8)
         groups = generate_groups_data_matrix(groups)
         return groups
@@ -108,7 +114,7 @@ class PreprocessDatasets:
         # Transform column wide days to single column
         stv = stv.melt(list(stv.columns[:6]), var_name='day', value_vars=list(stv.columns[6:]), ignore_index=True)
 
-        # Group by the groups to consider (product_id have 3049 unique)
+        # Group by the groups to consider (item_id have 3049 unique)
         stv = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id', 'day']).sum('value').reset_index()
         days_calendar = np.concatenate((stv['day'].unique().reshape(-1, 1), cal['date'][:-56].unique().reshape(-1, 1)),
                                        axis=1)
@@ -117,9 +123,12 @@ class PreprocessDatasets:
         # Add calendar days
         stv = stv.merge(df_caldays, how='left', on='day')
         stv['Date'] = stv['Date'].astype('datetime64[ns]')
+        stv = stv.set_index('Date')
 
         # Transform in weekly data
-        stv_weekly = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id']).resample('W', on='Date')['value'].sum()
+        rule = '7D'
+        f = self._floor(stv.index, rule)
+        stv_weekly = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id', f]).sum()
 
         stv_pivot = stv_weekly.reset_index().pivot(index='Date',
                                                    columns=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
