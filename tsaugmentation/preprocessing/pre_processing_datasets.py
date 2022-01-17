@@ -139,7 +139,8 @@ class PreprocessDatasets:
             'Department': [0],
             'Category': [1],
             'Store': [2],
-            'State': [3]
+            'State': [3],
+            'Item': [4]
         }
 
         groups = generate_groups_data_flat(y=stv_pivot,
