@@ -137,15 +137,15 @@ class PreprocessDatasets:
 
         # Filter top 1000 series
         stv_weekly_top = stv_weekly.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id']).sum().sort_values(
-            by='Count', ascending=False).head(self.top).drop('value', axis=1)
+            by='value', ascending=False).head(self.top).drop('value', axis=1)
 
         # create a column marking df2 values
         stv_weekly['marker'] = 1
 
         # join the two, keeping all of df1's indices
-        joined = pd.merge(stv_weekly, stv_weekly_top, on=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
+        joined = pd.merge(stv_weekly.reset_index(), stv_weekly_top, on=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
                           how='left')
-        stv_weekly_f = joined[joined['marker'] == 1][stv_weekly.columns]
+        stv_weekly_f = joined[joined['marker'] == 1][stv_weekly.reset_index().columns]
 
         # item_id could be added here
         stv_pivot = stv_weekly_f.reset_index().pivot(index='Date',
