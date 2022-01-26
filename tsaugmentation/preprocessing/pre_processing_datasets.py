@@ -115,9 +115,11 @@ class PreprocessDatasets:
         stv = stv.melt(list(stv.columns[:6]), var_name='day', value_vars=list(stv.columns[6:]), ignore_index=True)
 
         # Group by the groups to consider (item_id have 3049 unique)
-        stv = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id', 'day']).sum('value').reset_index()
-        days_calendar = np.concatenate((stv['day'].unique().reshape(-1, 1), cal['date'][:-56].unique().reshape(-1, 1)),
-                                       axis=1)
+        # item_id could be added here
+        stv = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'day']).sum('value').reset_index()
+        days_calendar = np.concatenate((stv['day'].unique().reshape(-1, 1),
+                                        cal['date'][:-56].unique().reshape(-1, 1)),
+                                        axis=1)
         df_caldays = pd.DataFrame(days_calendar, columns=['day', 'Date'])
 
         # Add calendar days
@@ -128,13 +130,29 @@ class PreprocessDatasets:
         # Transform in weekly data
         rule = '7D'
         f = self._floor(stv.index, rule)
+
+        # item_id could be added here
         stv_weekly = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id', f]).sum()
 
-        stv_pivot = stv_weekly.reset_index().pivot(index='Date',
-                                                   columns=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
-                                                   values='value')
+        # Filter top 1000 series
+        stv_weekly_top = stv_weekly.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id']).sum().sort_values(
+            by='Count', ascending=False).head(1000).drop('value', axis=1)
+
+        # create a column marking df2 values
+        stv_weekly['marker'] = 1
+
+        # join the two, keeping all of df1's indices
+        joined = pd.merge(stv_weekly, stv_weekly_top, on=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
+                          how='left')
+        stv_weekly_f = joined[joined['marker'] == 1][stv_weekly.columns]
+
+        # item_id could be added here
+        stv_pivot = stv_weekly_f.reset_index().pivot(index='Date',
+                                                     columns=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
+                                                     values='value')
         stv_pivot = stv_pivot.fillna(0)
 
+        # item_id could be added here
         groups_input = {
             'Department': [0],
             'Category': [1],
@@ -149,6 +167,48 @@ class PreprocessDatasets:
                                            seasonality=52,
                                            h=12)
         groups = generate_groups_data_matrix(groups)
+        return groups
+
+    def _police(self):
+        path = self._get_dataset()
+        if not path:
+            return {}
+        police = pd.read_excel(path)
+
+        police = police.drop(['RMSOccurrenceHour', 'StreetName', 'Suffix', 'NIBRSDescription', 'Premise'], axis=1)
+        police.columns = ['Id', 'Date', 'Crime', 'Count', 'Beat', 'Block', 'Street', 'City', 'ZIP']
+        police = police.drop(['Id'], axis=1)
+
+        # Filter top 1000 series
+        police_top = police.groupby(['Crime', 'Beat', 'Street', 'ZIP']).sum().sort_values(by='Count', ascending=False).head(
+            1000).drop('Count', axis=1)
+
+        # create a column marking df2 values
+        police_top['marker'] = 1
+
+        # join the two, keeping all of df1's indices
+        joined = pd.merge(police, police_top, on=['Crime', 'Beat', 'Street', 'ZIP'], how='left')
+        police_f = joined[joined['marker'] == 1][police.columns]
+
+        police_f = police_f.reset_index().drop('index', axis=1)
+        police_f = police_f.groupby(['Date', 'Crime', 'Beat', 'Street', 'ZIP']).sum().reset_index().set_index('Date')
+        police_pivot = police_f.reset_index().pivot(index='Date', columns=['Crime', 'Beat', 'Street', 'ZIP'], values='Count')
+        police_pivot = police_pivot.fillna(0)
+
+        groups_input = {
+            'Crime': [0],
+            'Beat': [1],
+            'Street': [2],
+            'ZIP': [3]
+        }
+
+        groups = generate_groups_data_flat(y=police_pivot,
+                                           dates=list(police_pivot.index),
+                                           groups_input=groups_input,
+                                           seasonality=7,
+                                           h=30)
+        groups = generate_groups_data_matrix(groups)
+
         return groups
 
     def apply_preprocess(self):
