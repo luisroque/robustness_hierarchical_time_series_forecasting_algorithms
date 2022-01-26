@@ -22,12 +22,13 @@ class PreprocessDatasets:
         relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
     """
 
-    def __init__(self, dataset, input_dir='./'):
+    def __init__(self, dataset, input_dir='./', top=500):
         if dataset == 'm5':
             dataset = dataset.capitalize()
         self.dataset = dataset
         self.input_dir = input_dir
         self.api = 'http://www.machinelearningtimeseries.com/apidownload/'
+        self.top = top
         self._create_directories()
 
     def _create_directories(self):
@@ -136,7 +137,7 @@ class PreprocessDatasets:
 
         # Filter top 1000 series
         stv_weekly_top = stv_weekly.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id']).sum().sort_values(
-            by='Count', ascending=False).head(1000).drop('value', axis=1)
+            by='Count', ascending=False).head(self.top).drop('value', axis=1)
 
         # create a column marking df2 values
         stv_weekly['marker'] = 1
@@ -181,7 +182,7 @@ class PreprocessDatasets:
 
         # Filter top 1000 series
         police_top = police.groupby(['Crime', 'Beat', 'Street', 'ZIP']).sum().sort_values(by='Count', ascending=False).head(
-            1000).drop('Count', axis=1)
+            top).drop('Count', axis=1)
 
         # create a column marking df2 values
         police_top['marker'] = 1
