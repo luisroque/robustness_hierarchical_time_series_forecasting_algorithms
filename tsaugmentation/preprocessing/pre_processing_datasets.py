@@ -182,7 +182,7 @@ class PreprocessDatasets:
 
         # Filter top 1000 series
         police_top = police.groupby(['Crime', 'Beat', 'Street', 'ZIP']).sum().sort_values(by='Count', ascending=False).head(
-            top).drop('Count', axis=1)
+            self.top).drop('Count', axis=1)
 
         # create a column marking df2 values
         police_top['marker'] = 1
