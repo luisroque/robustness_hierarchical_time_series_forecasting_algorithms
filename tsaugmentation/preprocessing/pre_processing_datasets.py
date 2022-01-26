@@ -117,7 +117,7 @@ class PreprocessDatasets:
 
         # Group by the groups to consider (item_id have 3049 unique)
         # item_id could be added here
-        stv = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'day']).sum('value').reset_index()
+        stv = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id', 'day']).sum('value').reset_index()
         days_calendar = np.concatenate((stv['day'].unique().reshape(-1, 1),
                                         cal['date'][:-56].unique().reshape(-1, 1)),
                                         axis=1)
