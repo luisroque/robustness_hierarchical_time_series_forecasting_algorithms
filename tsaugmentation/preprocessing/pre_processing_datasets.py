@@ -140,10 +140,11 @@ class PreprocessDatasets:
             by='value', ascending=False).head(self.top).drop('value', axis=1)
 
         # create a column marking df2 values
-        stv_weekly['marker'] = 1
+        stv_weekly_top['marker'] = 1
 
         # join the two, keeping all of df1's indices
-        joined = pd.merge(stv_weekly.reset_index(), stv_weekly_top, on=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
+        joined = pd.merge(stv_weekly.reset_index(), stv_weekly_top,
+                          on=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
                           how='left')
         stv_weekly_f = joined[joined['marker'] == 1][stv_weekly.reset_index().columns]
 
