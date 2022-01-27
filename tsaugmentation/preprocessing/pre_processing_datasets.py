@@ -22,13 +22,14 @@ class PreprocessDatasets:
         relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
     """
 
-    def __init__(self, dataset, input_dir='./', top=500):
+    def __init__(self, dataset, input_dir='./', top=500, test_size=None):
         if dataset == 'm5':
             dataset = dataset.capitalize()
         self.dataset = dataset
         self.input_dir = input_dir
         self.api = 'http://www.machinelearningtimeseries.com/apidownload/'
         self.top = top
+        self.test_size = test_size
         self._create_directories()
 
     def _create_directories(self):
@@ -111,6 +112,10 @@ class PreprocessDatasets:
         INPUT_DIR = f'{self.input_dir}data/original_datasets/m5-data'
         cal = pd.read_csv(f'{INPUT_DIR}/calendar.csv')
         stv = pd.read_csv(f'{INPUT_DIR}/sales_train_validation.csv')
+
+        # M5 is too big to fit into memory, using test_size for testing purposes
+        if self.test_size:
+            stv = stv[:1000]
 
         # Transform column wide days to single column
         stv = stv.melt(list(stv.columns[:6]), var_name='day', value_vars=list(stv.columns[6:]), ignore_index=True)
