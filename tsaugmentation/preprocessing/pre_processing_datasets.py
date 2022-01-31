@@ -60,7 +60,7 @@ class PreprocessDatasets:
             return {}
         prison = pd.read_csv(path, sep=",")
         if self.test_size:
-            prison = prison[:(self.test_size*self.groups['data']['n'])]
+            prison = prison[:self.test_size]
 
         prison = prison.drop('Unnamed: 0', axis =1)
         prison['t'] = prison['t'].astype('datetime64[ns]')
@@ -87,7 +87,7 @@ class PreprocessDatasets:
             return {}
         tourism = pd.read_csv(path, sep=",")
         if self.test_size:
-            tourism = tourism[:(self.test_size*self.groups['data']['n'])]
+            tourism = tourism[:self.test_size]
 
         tourism['t'] = tourism['Date'].astype('datetime64[ns]')
         tourism = tourism.drop('Date', axis=1)
@@ -120,7 +120,7 @@ class PreprocessDatasets:
 
         # M5 is too big to fit into memory, using test_size for testing purposes
         if self.test_size:
-            stv = stv[:(self.test_size*self.groups['data']['n'])]
+            stv = stv[:self.test_size]
 
         # Transform column wide days to single column
         stv = stv.melt(list(stv.columns[:6]), var_name='day', value_vars=list(stv.columns[6:]), ignore_index=True)
@@ -187,7 +187,7 @@ class PreprocessDatasets:
             return {}
         police = pd.read_excel(path)
         if self.test_size:
-            police = police[:(self.test_size*self.groups['data']['n'])]
+            police = police[:self.test_size]
 
         police = police.drop(['RMSOccurrenceHour', 'StreetName', 'Suffix', 'NIBRSDescription', 'Premise'], axis=1)
         police.columns = ['Id', 'Date', 'Crime', 'Count', 'Beat', 'Block', 'Street', 'City', 'ZIP']
