@@ -186,8 +186,6 @@ class PreprocessDatasets:
         if not path:
             return {}
         police = pd.read_excel(path)
-        if self.test_size:
-            police = police[:self.test_size]
 
         police = police.drop(['RMSOccurrenceHour', 'StreetName', 'Suffix', 'NIBRSDescription', 'Premise'], axis=1)
         police.columns = ['Id', 'Date', 'Crime', 'Count', 'Beat', 'Block', 'Street', 'City', 'ZIP']
@@ -195,7 +193,7 @@ class PreprocessDatasets:
 
         # Filter top 1000 series
         police_top = police.groupby(['Crime', 'Beat', 'Street', 'ZIP']).sum().sort_values(by='Count', ascending=False).head(
-            self.top).drop('Count', axis=1)
+            self.top)
 
         # create a column marking df2 values
         police_top['marker'] = 1
