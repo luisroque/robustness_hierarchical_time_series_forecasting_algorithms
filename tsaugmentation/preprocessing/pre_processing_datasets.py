@@ -6,6 +6,7 @@ import os
 import zipfile
 import numpy as np
 import datetime
+from itertools import product
 
 
 class PreprocessDatasets:
@@ -186,25 +187,32 @@ class PreprocessDatasets:
         if not path:
             return {}
         police = pd.read_excel(path)
+        cols = ['Crime', 'Beat', 'Street', 'ZIP']
 
         police = police.drop(['RMSOccurrenceHour', 'StreetName', 'Suffix', 'NIBRSDescription', 'Premise'], axis=1)
         police.columns = ['Id', 'Date', 'Crime', 'Count', 'Beat', 'Block', 'Street', 'City', 'ZIP']
         police = police.drop(['Id'], axis=1)
 
         # Filter top 1000 series
-        police_top = police.groupby(['Crime', 'Beat', 'Street', 'ZIP']).sum().sort_values(by='Count', ascending=False).head(
-            self.top)
+        police_top = police.groupby(cols).sum().sort_values(by='Count', ascending=False).head(
+            self.top).drop('Count', axis=1)
 
         # create a column marking df2 values
         police_top['marker'] = 1
 
         # join the two, keeping all of df1's indices
-        joined = pd.merge(police, police_top, on=['Crime', 'Beat', 'Street', 'ZIP'], how='left')
+        joined = pd.merge(police, police_top, on=cols, how='left')
         police_f = joined[joined['marker'] == 1][police.columns]
 
         police_f = police_f.reset_index().drop('index', axis=1)
-        police_f = police_f.groupby(['Date', 'Crime', 'Beat', 'Street', 'ZIP']).sum().reset_index().set_index('Date')
-        police_pivot = police_f.reset_index().pivot(index='Date', columns=['Crime', 'Beat', 'Street', 'ZIP'], values='Count')
+        police_f = police_f.groupby(cols.append('Date')).sum().reset_index().set_index('Date')
+
+        # build a reference dataframe with all the dates to be merges, as the original does not have data for all days
+        idx = pd.date_range(police_f.index[0], police_f.index[-1])
+        police_base = pd.DataFrame(product(*[np.array(police_f.values.tolist()).T[:, i] for i in range(len(cols))], idx))
+        police = police_base.merge(police_f, how='left', on=cols.append('Date'))
+
+        police_pivot = police.reset_index().pivot(index='Date', columns=['Crime', 'Beat', 'Street', 'ZIP'], values='Count')
         police_pivot = police_pivot.fillna(0)
 
         groups_input = {
