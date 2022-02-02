@@ -183,12 +183,15 @@ class PreprocessDatasets:
         return groups
 
     def _police(self):
-        path = self._get_dataset()
+        path = self._get_dataset(file_type='xlsx')
         if not path:
             return {}
         police = pd.read_excel(path)
         cols = ['Crime', 'Beat', 'Street', 'ZIP']
+        cols_date = cols.copy()
+        cols_date.append('Date')
 
+        # Drop unwanted columns
         police = police.drop(['RMSOccurrenceHour', 'StreetName', 'Suffix', 'NIBRSDescription', 'Premise'], axis=1)
         police.columns = ['Id', 'Date', 'Crime', 'Count', 'Beat', 'Block', 'Street', 'City', 'ZIP']
         police = police.drop(['Id'], axis=1)
@@ -203,16 +206,24 @@ class PreprocessDatasets:
         # join the two, keeping all of df1's indices
         joined = pd.merge(police, police_top, on=cols, how='left')
         police_f = joined[joined['marker'] == 1][police.columns]
-
         police_f = police_f.reset_index().drop('index', axis=1)
-        police_f = police_f.groupby(cols.append('Date')).sum().reset_index().set_index('Date')
+        police_f = police_f.groupby(cols_date).sum().reset_index().set_index('Date')
 
         # build a reference dataframe with all the dates to be merges, as the original does not have data for all days
+        police_to_merge = police_f.reset_index().drop(['Date', 'Count'], axis=1).drop_duplicates()
         idx = pd.date_range(police_f.index[0], police_f.index[-1])
-        police_base = pd.DataFrame(product(*[np.array(police_f.values.tolist()).T[:, i] for i in range(len(cols))], idx))
-        police = police_base.merge(police_f, how='left', on=cols.append('Date'))
+        lens = len(idx)
+        rest_to_concat = pd.DataFrame(np.array([np.repeat(police_to_merge.iloc[:, i].values, lens) for i in range(len(cols)-1)]).T)
+        complete_data = pd.DataFrame(product(list(police_to_merge.iloc[:, -1]), idx))
+        frames = [rest_to_concat, complete_data]
+        police_base = pd.concat(frames, axis=1)
+        police_base.columns = cols_date
 
-        police_pivot = police.reset_index().pivot(index='Date', columns=['Crime', 'Beat', 'Street', 'ZIP'], values='Count')
+        police_f = police_f.reset_index()
+        police_f = police_f.astype({'ZIP': 'object'})
+        police = police_base.merge(police_f, how='left', on=cols_date)
+
+        police_pivot = police.reset_index().pivot(index='Date', columns=cols, values='Count')
         police_pivot = police_pivot.fillna(0)
 
         groups_input = {
