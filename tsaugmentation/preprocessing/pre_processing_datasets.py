@@ -214,14 +214,12 @@ class PreprocessDatasets:
         # build a reference dataframe with all the dates to be merges, as the original does not have data for all days
         police_to_merge = police_f.reset_index().drop(['Date', 'Count'], axis=1).drop_duplicates()
         idx = pd.date_range(start_date, end_date)
-        print(idx)
         lens = len(idx)
         rest_to_concat = pd.DataFrame(np.array([np.repeat(police_to_merge.iloc[:, i].values, lens) for i in range(len(cols)-1)]).T)
         complete_data = pd.DataFrame(product(list(police_to_merge.iloc[:, -1]), idx))
         frames = [rest_to_concat, complete_data]
         police_base = pd.concat(frames, axis=1)
         police_base.columns = cols_date
-        print(police_base)
 
         police_f = police_f.reset_index()
         police = police_base.merge(police_f, how='left', on=cols_date)
