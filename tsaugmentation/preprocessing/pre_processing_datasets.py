@@ -182,7 +182,7 @@ class PreprocessDatasets:
         groups = generate_groups_data_matrix(groups)
         return groups
 
-    def _police(self):
+    def _police(self, start_date='2021-01-01', end_date='2021-11-30'):
         path = self._get_dataset(file_type='xlsx')
         if not path:
             return {}
@@ -195,10 +195,12 @@ class PreprocessDatasets:
         police = police.drop(['RMSOccurrenceHour', 'StreetName', 'Suffix', 'NIBRSDescription', 'Premise'], axis=1)
         police.columns = ['Id', 'Date', 'Crime', 'Count', 'Beat', 'Block', 'Street', 'City', 'ZIP']
         police = police.drop(['Id'], axis=1)
+        police = police.astype({'ZIP': 'string'})
 
         # Filter top 1000 series
         police_top = police.groupby(cols).sum().sort_values(by='Count', ascending=False).head(
-            self.top).drop('Count', axis=1)
+            self.top).drop('Count', axis=1).reset_index()
+        police = police.groupby(cols_date).sum().reset_index()
 
         # create a column marking df2 values
         police_top['marker'] = 1
@@ -211,16 +213,17 @@ class PreprocessDatasets:
 
         # build a reference dataframe with all the dates to be merges, as the original does not have data for all days
         police_to_merge = police_f.reset_index().drop(['Date', 'Count'], axis=1).drop_duplicates()
-        idx = pd.date_range(police_f.index[0], police_f.index[-1])
+        idx = pd.date_range(start_date, end_date)
+        print(idx)
         lens = len(idx)
         rest_to_concat = pd.DataFrame(np.array([np.repeat(police_to_merge.iloc[:, i].values, lens) for i in range(len(cols)-1)]).T)
         complete_data = pd.DataFrame(product(list(police_to_merge.iloc[:, -1]), idx))
         frames = [rest_to_concat, complete_data]
         police_base = pd.concat(frames, axis=1)
         police_base.columns = cols_date
+        print(police_base)
 
         police_f = police_f.reset_index()
-        police_f = police_f.astype({'ZIP': 'object'})
         police = police_base.merge(police_f, how='left', on=cols_date)
 
         police_pivot = police.reset_index().pivot(index='Date', columns=cols, values='Count')
