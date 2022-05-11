@@ -24,7 +24,7 @@ class TestCreateTransformedDatasets(unittest.TestCase):
 
     def test_create_correct_number_transformed_datasets_single_transf(self):
         # shape (n_transformations + random_transf , n_versions, n_samples, n_points_train, n_series)
-        self.assertTrue(self.transformed_datasets.y_new_all.shape == (4, 6, 10, 300, 500))
+        self.assertTrue(self.transformed_datasets.y_new_all.shape == (4, 6, 10, 304, 500))
 
     def test_create_correct_number_transformed_datasets_FILES_single_transf(self):
         transformed_datasets = CreateTransformedVersions(self.dataset)
