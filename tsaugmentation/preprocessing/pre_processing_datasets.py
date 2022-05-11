@@ -6,6 +6,7 @@ import os
 import zipfile
 import numpy as np
 import datetime
+from itertools import product
 
 
 class PreprocessDatasets:
@@ -22,12 +23,14 @@ class PreprocessDatasets:
         relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
     """
 
-    def __init__(self, dataset, input_dir='./'):
+    def __init__(self, dataset, input_dir='./', top=500, test_size=None):
         if dataset == 'm5':
             dataset = dataset.capitalize()
         self.dataset = dataset
         self.input_dir = input_dir
         self.api = 'http://www.machinelearningtimeseries.com/apidownload/'
+        self.top = top
+        self.test_size = test_size
         self._create_directories()
 
     def _create_directories(self):
@@ -57,9 +60,12 @@ class PreprocessDatasets:
         if not path:
             return {}
         prison = pd.read_csv(path, sep=",")
+        if self.test_size:
+            prison = prison[:self.test_size]
 
         prison = prison.drop('Unnamed: 0', axis =1)
         prison['t'] = prison['t'].astype('datetime64[ns]')
+        prison['t'] = pd.PeriodIndex(prison['t'], freq='Q').to_timestamp()
         prison_pivot = prison.pivot(index='t', columns=['state', 'gender', 'legal'], values='count')
 
         groups_input = {
@@ -81,6 +87,8 @@ class PreprocessDatasets:
         if not path:
             return {}
         tourism = pd.read_csv(path, sep=",")
+        if self.test_size:
+            tourism = tourism[:self.test_size]
 
         tourism['t'] = tourism['Date'].astype('datetime64[ns]')
         tourism = tourism.drop('Date', axis=1)
@@ -111,13 +119,19 @@ class PreprocessDatasets:
         cal = pd.read_csv(f'{INPUT_DIR}/calendar.csv')
         stv = pd.read_csv(f'{INPUT_DIR}/sales_train_validation.csv')
 
+        # M5 is too big to fit into memory, using test_size for testing purposes
+        if self.test_size:
+            stv = stv[:self.test_size]
+
         # Transform column wide days to single column
         stv = stv.melt(list(stv.columns[:6]), var_name='day', value_vars=list(stv.columns[6:]), ignore_index=True)
 
         # Group by the groups to consider (item_id have 3049 unique)
+        # item_id could be added here
         stv = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id', 'day']).sum('value').reset_index()
-        days_calendar = np.concatenate((stv['day'].unique().reshape(-1, 1), cal['date'][:-56].unique().reshape(-1, 1)),
-                                       axis=1)
+        days_calendar = np.concatenate((stv['day'].unique().reshape(-1, 1),
+                                        cal['date'][:-56].unique().reshape(-1, 1)),
+                                        axis=1)
         df_caldays = pd.DataFrame(days_calendar, columns=['day', 'Date'])
 
         # Add calendar days
@@ -128,13 +142,30 @@ class PreprocessDatasets:
         # Transform in weekly data
         rule = '7D'
         f = self._floor(stv.index, rule)
+
+        # item_id could be added here
         stv_weekly = stv.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id', f]).sum()
 
-        stv_pivot = stv_weekly.reset_index().pivot(index='Date',
-                                                   columns=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
-                                                   values='value')
+        # Filter top 1000 series
+        stv_weekly_top = stv_weekly.groupby(['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id']).sum().sort_values(
+            by='value', ascending=False).head(self.top).drop('value', axis=1)
+
+        # create a column marking df2 values
+        stv_weekly_top['marker'] = 1
+
+        # join the two, keeping all of df1's indices
+        joined = pd.merge(stv_weekly.reset_index(), stv_weekly_top,
+                          on=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
+                          how='left')
+        stv_weekly_f = joined[joined['marker'] == 1][stv_weekly.reset_index().columns]
+
+        # item_id could be added here
+        stv_pivot = stv_weekly_f.reset_index().pivot(index='Date',
+                                                     columns=['dept_id', 'cat_id', 'store_id', 'state_id', 'item_id'],
+                                                     values='value')
         stv_pivot = stv_pivot.fillna(0)
 
+        # item_id could be added here
         groups_input = {
             'Department': [0],
             'Category': [1],
@@ -149,6 +180,67 @@ class PreprocessDatasets:
                                            seasonality=52,
                                            h=12)
         groups = generate_groups_data_matrix(groups)
+        return groups
+
+    def _police(self, start_date='2021-01-01', end_date='2021-11-30'):
+        path = self._get_dataset(file_type='xlsx')
+        if not path:
+            return {}
+        police = pd.read_excel(path)
+        cols = ['Crime', 'Beat', 'Street', 'ZIP']
+        cols_date = cols.copy()
+        cols_date.append('Date')
+
+        # Drop unwanted columns
+        police = police.drop(['RMSOccurrenceHour', 'StreetName', 'Suffix', 'NIBRSDescription', 'Premise'], axis=1)
+        police.columns = ['Id', 'Date', 'Crime', 'Count', 'Beat', 'Block', 'Street', 'City', 'ZIP']
+        police = police.drop(['Id'], axis=1)
+        police = police.astype({'ZIP': 'string'})
+
+        # Filter top 1000 series
+        police_top = police.groupby(cols).sum().sort_values(by='Count', ascending=False).head(
+            self.top).drop('Count', axis=1).reset_index()
+        police = police.groupby(cols_date).sum().reset_index()
+
+        # create a column marking df2 values
+        police_top['marker'] = 1
+
+        # join the two, keeping all of df1's indices
+        joined = pd.merge(police, police_top, on=cols, how='left')
+        police_f = joined[joined['marker'] == 1][police.columns]
+        police_f = police_f.reset_index().drop('index', axis=1)
+        police_f = police_f.groupby(cols_date).sum().reset_index().set_index('Date')
+
+        # build a reference dataframe with all the dates to be merges, as the original does not have data for all days
+        police_to_merge = police_f.reset_index().drop(['Date', 'Count'], axis=1).drop_duplicates()
+        idx = pd.date_range(start_date, end_date)
+        lens = len(idx)
+        rest_to_concat = pd.DataFrame(np.array([np.repeat(police_to_merge.iloc[:, i].values, lens) for i in range(len(cols)-1)]).T)
+        complete_data = pd.DataFrame(product(list(police_to_merge.iloc[:, -1]), idx))
+        frames = [rest_to_concat, complete_data]
+        police_base = pd.concat(frames, axis=1)
+        police_base.columns = cols_date
+
+        police_f = police_f.reset_index()
+        police = police_base.merge(police_f, how='left', on=cols_date)
+
+        police_pivot = police.reset_index().pivot(index='Date', columns=cols, values='Count')
+        police_pivot = police_pivot.fillna(0)
+
+        groups_input = {
+            'Crime': [0],
+            'Beat': [1],
+            'Street': [2],
+            'ZIP': [3]
+        }
+
+        groups = generate_groups_data_flat(y=police_pivot,
+                                           dates=list(police_pivot.index),
+                                           groups_input=groups_input,
+                                           seasonality=7,
+                                           h=30)
+        groups = generate_groups_data_matrix(groups)
+
         return groups
 
     def apply_preprocess(self):
