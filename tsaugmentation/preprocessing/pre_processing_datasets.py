@@ -93,6 +93,7 @@ class PreprocessDatasets:
         tourism['t'] = tourism['Date'].astype('datetime64[ns]')
         tourism = tourism.drop('Date', axis=1)
         tourism_pivot = tourism.pivot(index='t', columns=['state', 'zone', 'region', 'purpose'], values='Count')
+        tourism_pivot = tourism_pivot.reindex(sorted(tourism_pivot.columns), axis=1)
 
         groups_input = {
             'state': [0],

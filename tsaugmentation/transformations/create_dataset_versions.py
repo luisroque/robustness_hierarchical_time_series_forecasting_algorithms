@@ -10,8 +10,6 @@ class CreateTransformedVersions:
     """
     A class used to create new datasets from an original one using time series augmentation techniques
 
-    ...
-
     Attributes
     ----------
     dataset : str
