@@ -14,8 +14,8 @@ class TestModel(unittest.TestCase):
         self.assertTrue(self.data['train']['data'].shape == (40, 2))
 
     def test_import_tourism(self):
-        self.data = tsag.preprocessing.PreprocessDatasets('tourism', test_size=228*2).apply_preprocess()
-        self.assertTrue(self.data['train']['data'].shape == (204, 2))
+        self.data = tsag.preprocessing.PreprocessDatasets('tourism', test_size=228*50).apply_preprocess()
+        self.assertTrue(self.data['train']['data'].shape == (204, 50))
 
     def test_import_m5(self):
         self.data = tsag.preprocessing.PreprocessDatasets('m5', test_size=2).apply_preprocess()
