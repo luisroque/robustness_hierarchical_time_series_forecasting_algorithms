@@ -9,11 +9,13 @@ class TestCreateTransformedDatasets(unittest.TestCase):
 
     def setUp(self):
         self.dataset = 'police'
-        self.transformed_datasets = CreateTransformedVersions(self.dataset)
-        self.transformed_datasets.parameters = {"jitter": 0.5,
+        self.transformed_datasets_train = CreateTransformedVersions(self.dataset, transf_data='train')
+        self.transformed_datasets = CreateTransformedVersions(self.dataset, transf_data='whole')
+        self.transformed_datasets_train.parameters = {"jitter": 0.5,
                                            "scaling": 0.1,
                                            "magnitude_warp": 0.05,
                                            "time_warp": 0.05}
+        self.transformed_datasets_train.create_new_version_single_transf()
         self.transformed_datasets.create_new_version_single_transf()
         np.random.seed(0)
 
@@ -24,7 +26,11 @@ class TestCreateTransformedDatasets(unittest.TestCase):
 
     def test_create_correct_number_transformed_datasets_single_transf(self):
         # shape (n_transformations + random_transf , n_versions, n_samples, n_points_train, n_series)
-        self.assertTrue(self.transformed_datasets.y_new_all.shape == (4, 6, 10, 304, 500))
+        self.assertTrue(self.transformed_datasets_train.y_new_all.shape == (4, 6, 10, 304, 500))
+
+    def test_create_correct_number_transformed_datasets_single_transf_whole_dataset(self):
+        # shape (n_transformations + random_transf , n_versions, n_samples, n_points_train, n_series)
+        self.assertTrue(self.transformed_datasets.y_new_all.shape == (4, 6, 10, 334, 500))
 
     def test_create_correct_number_transformed_datasets_FILES_single_transf(self):
         transformed_datasets = CreateTransformedVersions(self.dataset)

@@ -16,43 +16,67 @@ class CreateTransformedVersions:
         the original dataset to consider
     rel_dir : str
         relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
+    transf_data: str
+        what data to transform: only training data 'train' or the whole dataset 'whole'
     """
 
-    def __init__(self, dataset, input_dir='./'):
+    def __init__(self, dataset, input_dir="./", transf_data='train'):
         self.dataset = dataset
         self.input_dir = input_dir
-        self.transformations = ['jitter', 'scaling', 'magnitude_warp', 'time_warp']
+        self.transformations = ["jitter", "scaling", "magnitude_warp", "time_warp"]
         self.transformations_w_random = self.transformations.copy()
-        self.transformations_w_random.insert(0, 'random')
-        self.parameters = {"jitter": 0.5,
-                           "scaling": 0.02,
-                           "magnitude_warp": 0.02,
-                           "time_warp": 0.02}
+        self.transformations_w_random.insert(0, "random")
+        self.parameters = {
+            "jitter": 0.5,
+            "scaling": 0.02,
+            "magnitude_warp": 0.02,
+            "time_warp": 0.02,
+        }
         self.data = self.get_dataset()
-        self.n = self.data['train']['n'] # number of points in each series
-        self.s = self.data['train']['s'] # number of series in dataset
+        self.s = self.data["train"]["s"]  # number of series in dataset
         self.n_samples = 10
-        self.y = self.data['train']['data']
-        self.groups_idx = self.data['train']['groups_idx']
+
+        if transf_data == 'train':
+            self.y = self.data["train"]["data"]
+            self.n = self.data["train"]["n"]  # number of points in each series for the training dataset
+        else:
+            self.y = self.data['predict']['data_matrix']
+            self.n = self.data["predict"]["n"]  # number of points in each series for the whole dataset
+
+        self.groups_idx = self.data["train"]["groups_idx"]
         self._create_directories()
         self._save_original_file()
         self.n_versions = 6
-        self.visualizer = Visualizer(dataset=self.dataset, n_versions=self.n_versions, n_series=6)
-        self.y_new_all = np.zeros((len(self.transformations), self.n_versions, self.n_samples, self.n, self.s))
-        self.transfs = np.tile(np.array(self.transformations).reshape(-1, 1),
-                          (self.n_versions, self.n_samples, 1, self.s)).transpose(2, 0, 1, 3)
+        self.visualizer = Visualizer(
+            dataset=self.dataset, n_versions=self.n_versions, n_series=6
+        )
+        self.y_new_all = np.zeros(
+            (len(self.transformations), self.n_versions, self.n_samples, self.n, self.s)
+        )
+        self.transfs = np.tile(
+            np.array(self.transformations).reshape(-1, 1),
+            (self.n_versions, self.n_samples, 1, self.s),
+        ).transpose(2, 0, 1, 3)
 
     def _create_directories(self):
         # Create directory to store transformed datasets if does not exist
-        Path(f'{self.input_dir}data').mkdir(parents=True, exist_ok=True)
-        Path(f'{self.input_dir}data/transformed_datasets').mkdir(parents=True, exist_ok=True)
+        Path(f"{self.input_dir}data").mkdir(parents=True, exist_ok=True)
+        Path(f"{self.input_dir}data/transformed_datasets").mkdir(
+            parents=True, exist_ok=True
+        )
 
     def _save_original_file(self):
-        with open(f'{self.input_dir}data/transformed_datasets/{self.dataset}_original.npy', 'wb') as f:
+        with open(
+            f"{self.input_dir}data/transformed_datasets/{self.dataset}_original.npy",
+            "wb",
+        ) as f:
             np.save(f, self.y)
 
     def _save_version_file(self, y_new, version, sample, transformation, method):
-        with open(f'{self.input_dir}data/transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}_{transformation}.npy', 'wb') as f:
+        with open(
+            f"{self.input_dir}data/transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}_{transformation}.npy",
+            "wb",
+        ) as f:
             np.save(f, y_new)
 
     def get_dataset(self):
@@ -62,32 +86,41 @@ class CreateTransformedVersions:
         self.visualizer.visualize_series_transf(transf=transf, method=method)
 
     def _get_parameters_map(self, transfs):
-        params = np.vectorize(self.parameters.get, otypes=['float'])(transfs)
+        params = np.vectorize(self.parameters.get, otypes=["float"])(transfs)
         return params
 
     def _create_new_version(self, method, n_versions=None, save=True):
         if not n_versions:
             n_versions = self.n_versions
-        y_new = np.zeros((len(self.transformations), self.n_versions, self.n_samples, self.n, self.s))
+        y_new = np.zeros(
+            (len(self.transformations), self.n_versions, self.n_samples, self.n, self.s)
+        )
         params = self._get_parameters_map(self.transformations)
         for k in range(len(self.transformations)):
             # Create versions and samples per transformation
-            for i in range(1, n_versions+1):
+            for i in range(1, n_versions + 1):
                 # Create 6 different versions of a dataset
-                for j in range(1, self.n_samples+1):
+                for j in range(1, self.n_samples + 1):
                     # Create 10 samples of each version
-                    y_new[k, i-1, j-1] = ManipulateData(self.y,
-                                                        self.transformations[k],
-                                                        parameters=params*i).apply_transf()
+                    y_new[k, i - 1, j - 1] = ManipulateData(
+                        self.y, self.transformations[k], parameters=params * i
+                    ).apply_transf()
                 if save:
-                    self._save_version_file(y_new[k, i-1], i, j, self.transformations[k], method)
+                    self._save_version_file(
+                        y_new[k, i - 1], i, j, self.transformations[k], method
+                    )
         return y_new
 
     def create_new_version_single_transf(self):
-        self.y_new_all = self._create_new_version(method='single_transf')
+        self.y_new_all = self._create_new_version(method="single_transf")
         for i in range(len(self.transformations)):
-            self._visualize_transf_series(transf=self.transfs[i, :, 0, :], method=f'single_transf_{self.transformations[i]}')
-        print(f'\nSUCCESS: Stored {self.transfs.shape[0]*self.transfs.shape[1]*self.transfs.shape[2]} transformed datasets')
+            self._visualize_transf_series(
+                transf=self.transfs[i, :, 0, :],
+                method=f"single_transf_{self.transformations[i]}",
+            )
+        print(
+            f"\nSUCCESS: Stored {self.transfs.shape[0]*self.transfs.shape[1]*self.transfs.shape[2]} transformed datasets"
+        )
 
     def _plot_distances(self, dict_transf_ver, title):
         self.visualizer.visualize_avg_distance_by_version(dict_transf_ver, title)
@@ -97,10 +130,16 @@ class CreateTransformedVersions:
         for i in range(len(self.transformations_w_random)):
             res_dict[self.transformations_w_random[i]] = {}
             for j in range(self.n_versions):
-                compute_similarities = ComputeSimilaritiesSummaryMetrics(self.y_new_all[i, j], self.groups_idx)
-                res_dict[self.transformations_w_random[i]][f'v{j+1}'] = compute_similarities.compute_avg_similarities()['all']
-        title = 'Average distance within each group of the transformed dataset\n' \
-                'using DTW (by transformation and version)'
+                compute_similarities = ComputeSimilaritiesSummaryMetrics(
+                    self.y_new_all[i, j], self.groups_idx
+                )
+                res_dict[self.transformations_w_random[i]][
+                    f"v{j+1}"
+                ] = compute_similarities.compute_avg_similarities()["all"]
+        title = (
+            "Average distance within each group of the transformed dataset\n"
+            "using DTW (by transformation and version)"
+        )
         self._plot_distances(res_dict, title)
 
     def compute_distances_transf_vs_original_by_transf_and_ver(self):
@@ -108,22 +147,35 @@ class CreateTransformedVersions:
         for i in range(len(self.transformations)):
             res_dict[self.transformations[i]] = {}
             for j in range(self.n_versions):
-                compute_similarities = ComputeSimilaritiesSummaryMetrics(dataset=self.y,
-                                                                         group_dict_idxs=self.groups_idx,
-                                                                         transformed_dataset=self.y_new_all[i, j])
-                res_dict[self.transformations[i]][f'v{j+1}'] = compute_similarities\
-                    .compute_avg_similarities_transf_dataset_vs_original()
-        title = 'Average distance of the transformed time series and the original dataset\n' \
-                'using DTW (by transformation and version)'
+                compute_similarities = ComputeSimilaritiesSummaryMetrics(
+                    dataset=self.y,
+                    group_dict_idxs=self.groups_idx,
+                    transformed_dataset=self.y_new_all[i, j],
+                )
+                res_dict[self.transformations[i]][
+                    f"v{j+1}"
+                ] = (
+                    compute_similarities.compute_avg_similarities_transf_dataset_vs_original()
+                )
+        title = (
+            "Average distance of the transformed time series and the original dataset\n"
+            "using DTW (by transformation and version)"
+        )
         self._plot_distances(res_dict, title)
 
     def _compute_distances_transf_vs_original(self, n_versions, y_new_all):
         res_dict = {}
         for j in range(n_versions):
-            compute_similarities = ComputeSimilaritiesSummaryMetrics(dataset=self.y,
-                                                                     group_dict_idxs=self.groups_idx,
-                                                                     transformed_dataset=y_new_all[j])
-            res_dict[f'v{j + 1}'] = compute_similarities.compute_avg_similarities_transf_dataset_vs_original()
+            compute_similarities = ComputeSimilaritiesSummaryMetrics(
+                dataset=self.y,
+                group_dict_idxs=self.groups_idx,
+                transformed_dataset=y_new_all[j],
+            )
+            res_dict[
+                f"v{j + 1}"
+            ] = (
+                compute_similarities.compute_avg_similarities_transf_dataset_vs_original()
+            )
         return res_dict
 
     def _plot_transformations_by_version(self, dist_dict, title):
