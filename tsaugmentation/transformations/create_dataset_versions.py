@@ -20,7 +20,7 @@ class CreateTransformedVersions:
         what data to transform: only training data 'train' or the whole dataset 'whole'
     """
 
-    def __init__(self, dataset, input_dir="./", transf_data='train'):
+    def __init__(self, dataset, input_dir="./", transf_data="train"):
         self.dataset = dataset
         self.input_dir = input_dir
         self.transformations = ["jitter", "scaling", "magnitude_warp", "time_warp"]
@@ -36,11 +36,12 @@ class CreateTransformedVersions:
         self.s = self.data["train"]["s"]  # number of series in dataset
         self.n_samples = 10
 
-        if transf_data == 'train':
+        self.transf_data = transf_data
+        if transf_data == "train":
             self.y = self.data["train"]["data"]
             self.n = self.data["train"]["n"]  # number of points in each series for the training dataset
         else:
-            self.y = self.data['predict']['data_matrix']
+            self.y = self.data["predict"]["data_matrix"]
             self.n = self.data["predict"]["n"]  # number of points in each series for the whole dataset
 
         self.groups_idx = self.data["train"]["groups_idx"]
@@ -48,7 +49,7 @@ class CreateTransformedVersions:
         self._save_original_file()
         self.n_versions = 6
         self.visualizer = Visualizer(
-            dataset=self.dataset, n_versions=self.n_versions, n_series=6
+            dataset=self.dataset, n_versions=self.n_versions, n_series=6, transf_data=self.transf_data
         )
         self.y_new_all = np.zeros(
             (len(self.transformations), self.n_versions, self.n_samples, self.n, self.s)
@@ -74,7 +75,7 @@ class CreateTransformedVersions:
 
     def _save_version_file(self, y_new, version, sample, transformation, method):
         with open(
-            f"{self.input_dir}data/transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}_{transformation}.npy",
+            f"{self.input_dir}data/transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}_{transformation}_{self.transf_data}.npy",
             "wb",
         ) as f:
             np.save(f, y_new)

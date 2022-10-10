@@ -21,11 +21,12 @@ class Visualizer:
         number of series to plot
     """
 
-    def __init__(self, dataset, n_versions=6, n_series=6, input_dir='./'):
+    def __init__(self, dataset, n_versions=6, n_series=6, input_dir='./', transf_data='train'):
         self.n_series = n_series
         self.dataset = dataset
         self.n_versions = n_versions
         self.input_dir = input_dir
+        self.transf_data = transf_data
 
     def _read_files(self, method):
         with open(f'{self.input_dir}data/transformed_datasets/{self.dataset}_original.npy', 'rb') as f:
@@ -33,7 +34,7 @@ class Visualizer:
 
         y_new = []
         for version in range(1, self.n_versions + 1):
-            with open(f'{self.input_dir}data/transformed_datasets/{self.dataset}_version_{version}_10samples_{method}.npy',
+            with open(f'{self.input_dir}data/transformed_datasets/{self.dataset}_version_{version}_10samples_{method}_{self.transf_data}.npy',
                       'rb') as f_new:
                 y_ver = np.load(f_new)
                 y_new.append(y_ver)
