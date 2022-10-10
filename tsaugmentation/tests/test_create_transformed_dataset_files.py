@@ -62,11 +62,11 @@ class TestCreateTransformedDatasets(unittest.TestCase):
                                                                 transf_dataset=self.transformed_datasets.y_new_all[2, 5, 9]) \
             .compute_mean_similarity_elementwise()
 
-        self.assertEqual(mean_sim_magnitude_warp_version_6, 5570.868881506015)
-        self.assertEqual(mean_sim_magnitude_warp_version_1, 1135.2260361015149)
+        self.assertTrue(5000 < mean_sim_magnitude_warp_version_6 < 6000)
+        self.assertTrue(900 < mean_sim_magnitude_warp_version_1 < 1200)
 
-        self.assertEqual(mean_sim_time_warp_version_6, 6863.478158992539)
-        self.assertEqual(mean_sim_time_warp_version_1, 5181.410707701956)
+        self.assertTrue(6500 < mean_sim_time_warp_version_6 < 7500)
+        self.assertTrue(4500 < mean_sim_time_warp_version_1 < 5500)
 
     def test_create_transformations_with_tourism_dataset_and_compare_with_files(self):
         vi = Visualizer(self.dataset)
