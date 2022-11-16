@@ -34,9 +34,9 @@ def plot_generated_vs_original(
     :para n_series: number of series to plot
     """
     # n_series needs to be even
-    if not n_series % 2:
+    if not n_series % 2 == 0:
         n_series -= 1
-    _, ax = plt.subplots(n_series, int(n_series // 2), figsize=(18, 10))
+    _, ax = plt.subplots(int(n_series // 2), int(n_series // 4), figsize=(18, 10))
     ax = ax.ravel()
     for i in range(n_series):
         ax[i].plot(dec_pred_hat[:, i], label="new sample")
