@@ -1,5 +1,16 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+
+
+def plot_generated_vs_original(dec_pred_hat: np.ndarray, X_train_raw: np.ndarray) -> None:
+    _, ax = plt.subplots(4, 2, figsize=(18, 10))
+    ax = ax.ravel()
+    for i in range(8):
+        ax[i].plot(dec_pred_hat[:, i], label='new sample')
+        ax[i].plot(X_train_raw[:, i], label='orig')
+    plt.legend()
+    plt.show()
 
 
 class DataTransform:
