@@ -20,8 +20,8 @@ class CreateTransformedVersions:
         what data to transform: only training data 'train' or the whole dataset 'whole'
     """
 
-    def __init__(self, dataset, input_dir="./", transf_data="train"):
-        self.dataset = dataset
+    def __init__(self, dataset_name, input_dir="./", transf_data="whole"):
+        self.dataset_name = dataset_name
         self.input_dir = input_dir
         self.transformations = ["jitter", "scaling", "magnitude_warp", "time_warp"]
         self.transformations_w_random = self.transformations.copy()
@@ -32,7 +32,7 @@ class CreateTransformedVersions:
             "magnitude_warp": 0.02,
             "time_warp": 0.02,
         }
-        self.data = self.get_dataset()
+        self.data = self._get_dataset()
         self.s = self.data["train"]["s"]  # number of series in dataset
         self.n_samples = 10
 
@@ -80,7 +80,7 @@ class CreateTransformedVersions:
         ) as f:
             np.save(f, y_new)
 
-    def get_dataset(self):
+    def _get_dataset(self):
         return ppc(self.dataset).apply_preprocess()
 
     def _visualize_transf_series(self, transf, method):
@@ -97,6 +97,7 @@ class CreateTransformedVersions:
             (len(self.transformations), self.n_versions, self.n_samples, self.n, self.s)
         )
         params = self._get_parameters_map(self.transformations)
+        j = 0
         for k in range(len(self.transformations)):
             # Create versions and samples per transformation
             for i in range(1, n_versions + 1):
