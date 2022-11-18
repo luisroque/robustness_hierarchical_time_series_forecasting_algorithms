@@ -14,7 +14,9 @@ from tsaugmentation.feature_engineering.feature_transformations import (
     detemporalize,
 )
 from tsaugmentation.postprocessing.generative_helper import generate_new_time_series
-from tsaugmentation.transformations.compute_similarities_summary_metrics import compute_similarity_transformed_vs_original
+from tsaugmentation.transformations.compute_similarities_summary_metrics import (
+    compute_similarity_transformed_vs_original,
+)
 from tsaugmentation.visualization.model_visualization import plot_generated_vs_original
 from sklearn.preprocessing import MinMaxScaler
 from tsaugmentation.model.models import VAE, get_mv_model
@@ -47,7 +49,9 @@ class TestModel(unittest.TestCase):
         self.scaler_target = MinMaxScaler().fit(self.X_train_raw)
         X_train_raw_scaled = self.scaler_target.transform(self.X_train_raw)
 
-        static_features = create_static_features(self.window_size, groups, dataset, self.n)
+        static_features = create_static_features(
+            self.window_size, groups, dataset, self.n
+        )
 
         static_features_scaled = scale_static_features(static_features)
         dynamic_features = create_dynamic_features(df)
@@ -55,7 +59,11 @@ class TestModel(unittest.TestCase):
 
         n_features_concat = X_train.shape[1] + dynamic_features.shape[1]
 
-        self.dynamic_features_inp, X_inp, self.static_features_inp = combine_inputs_to_model(
+        (
+            self.dynamic_features_inp,
+            X_inp,
+            self.static_features_inp,
+        ) = combine_inputs_to_model(
             X_train,
             dynamic_features,
             static_features_scaled,
@@ -101,7 +109,7 @@ class TestModel(unittest.TestCase):
             self.static_features_inp,
             self.scaler_target,
             self.n_features,
-            self.n_train
+            self.n_train,
         )
 
         plot_generated_vs_original(dec_pred_hat, self.X_train_raw, 10)
@@ -118,8 +126,12 @@ class TestModel(unittest.TestCase):
             self.static_features_inp,
             self.scaler_target,
             self.n_features,
-            self.n_train
+            self.n_train,
         )
 
-        self.assertTrue(compute_similarity_transformed_vs_original(dec_pred_hat, self.X_train_raw)[0] < 20)
-
+        self.assertTrue(
+            compute_similarity_transformed_vs_original(dec_pred_hat, self.X_train_raw)[
+                0
+            ]
+            < 20
+        )

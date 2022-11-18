@@ -4,10 +4,10 @@ from tsaugmentation.feature_engineering.feature_transformations import detempora
 from sklearn.preprocessing import MinMaxScaler
 
 
-def generate_new_time_series(vae: keras.Model, init_samples_std: list[int], z: np.ndarray, window_size: str,
+def generate_new_time_series(vae: keras.Model, init_samples_std: list[float], z: np.ndarray, window_size: int,
                              dynamic_features_inp: list[np.ndarray],
                              static_features_inp: list[np.ndarray],
-                             scaler_target: MinMaxScaler,
+                             scaler_target: object,
                              n_features: int,
                              n: int) -> np.ndarray:
     """
