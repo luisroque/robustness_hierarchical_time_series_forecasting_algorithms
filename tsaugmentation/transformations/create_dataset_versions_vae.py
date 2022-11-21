@@ -272,5 +272,5 @@ class CreateTransformedVersionsVAE:
                     vae, z, std_latent_space[v - 1]
                 )
             if save:
-                self._save_version_file(y_new[v - 1], v, s, f"vae{str(std_latent_space[v - 1]).replace('.', '')}")
+                self._save_version_file(y_new[v - 1], v, s, "vae")
         return y_new
