@@ -199,10 +199,32 @@ class CreateTransformedVersionsVAE:
 
         return vae
 
-    def predict(self, vae: VAE) -> tuple[np.ndarray, np.ndarray]:
+    def predict(self, vae: VAE, similar_static_features: bool = True) -> tuple[np.ndarray, np.ndarray]:
+        """Predict original time series using VAE, note that by default we will use the middle value
+         (0.5 since we have a MinMax scaling) for the static features so that we are sampling using
+         the most similar structure possible and so reduce the distance between the series
+
+        Args:
+            vae: vae model
+            similar_static_features: bool to indicate if we use the original static feature of a
+                    middle value to increase the similarity between the series generated
+
+        Returns:
+            Tuple containing the predictions and also the z value computed by calling predict on
+            the encoder
+
+        """
         dynamic_feat, X_inp, static_feat = self.features_input
 
-        _, _, z = vae.encoder.predict(dynamic_feat + X_inp + static_feat)
+        if similar_static_features:
+            sim_static_features = []
+            for i in range(len(static_feat)):
+                sim_static_features.append(0.5 * np.ones((self.n_train, self.n_features, 1)))
+
+            _, _, z = vae.encoder.predict(dynamic_feat + X_inp + sim_static_features)
+        else:
+            _, _, z = vae.encoder.predict(dynamic_feat + X_inp + static_feat)
+
         preds = vae.decoder.predict([z] + dynamic_feat + static_feat)
         preds = detemporalize(preds)
         X_hat = self.scaler_target.inverse_transform(preds)

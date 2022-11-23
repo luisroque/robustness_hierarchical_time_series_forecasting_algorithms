@@ -1,5 +1,4 @@
 import unittest
-import shutil
 from tsaugmentation.transformations.create_dataset_versions_vae import (
     CreateTransformedVersionsVAE,
 )
@@ -9,9 +8,6 @@ from tsaugmentation.transformations.compute_similarities_summary_metrics import 
 
 
 class TestModel(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree("./data/original_datasets")
 
     def setUp(self) -> None:
         self.create_dataset_vae = CreateTransformedVersionsVAE("tourism")
