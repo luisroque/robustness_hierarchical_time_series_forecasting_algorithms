@@ -153,7 +153,7 @@ class CreateTransformedVersionsVAE:
         batch_size: int = 5,
         patience: int = 30,
         mv_normal_dim: int = None,
-    ) -> VAE:
+    ) -> tuple[VAE, dict]:
         """
         Training our VAE on the dataset supplied
 
@@ -189,7 +189,7 @@ class CreateTransformedVersionsVAE:
             restore_best_weights=True,
         )
 
-        vae.fit(
+        history = vae.fit(
             x=self.features_input,
             epochs=epochs,
             batch_size=batch_size,
@@ -197,9 +197,11 @@ class CreateTransformedVersionsVAE:
             callbacks=[es],
         )
 
-        return vae
+        return vae, history
 
-    def predict(self, vae: VAE, similar_static_features: bool = True) -> tuple[np.ndarray, np.ndarray]:
+    def predict(
+        self, vae: VAE, similar_static_features: bool = True
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Predict original time series using VAE, note that by default we will use the middle value
          (0.5 since we have a MinMax scaling) for the static features so that we are sampling using
          the most similar structure possible and so reduce the distance between the series
@@ -219,7 +221,9 @@ class CreateTransformedVersionsVAE:
         if similar_static_features:
             sim_static_features = []
             for i in range(len(static_feat)):
-                sim_static_features.append(0.5 * np.ones((self.n_train, self.n_features, 1)))
+                sim_static_features.append(
+                    0.5 * np.ones((self.n_train, self.n_features, 1))
+                )
 
             _, _, z = vae.encoder.predict(dynamic_feat + X_inp + sim_static_features)
         else:
@@ -261,7 +265,9 @@ class CreateTransformedVersionsVAE:
         )
 
         # To train the VAE the first points (equal to the window size) of the dataset were not predicted
-        dec_pred_hat_complete = np.concatenate((self.X_train_raw[:10], dec_pred_hat), axis=0)
+        dec_pred_hat_complete = np.concatenate(
+            (self.X_train_raw[:10], dec_pred_hat), axis=0
+        )
         return dec_pred_hat_complete
 
     def generate_new_datasets(
@@ -284,9 +290,7 @@ class CreateTransformedVersionsVAE:
         :param n_samples: number of samples of the dataset to create
         :param save: if true the datasets are stored locally
         """
-        y_new = np.zeros(
-            (n_versions, n_samples, self.n, self.s)
-        )
+        y_new = np.zeros((n_versions, n_samples, self.n, self.s))
         s = 0
         for v in range(1, n_versions + 1):
             for s in range(1, n_samples + 1):

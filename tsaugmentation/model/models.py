@@ -19,7 +19,7 @@ from keras.models import Model
 class VAE(keras.Model):
     """
     Variational Autoencoder class that implements a custom architecture of encoder and decoder
-    that handles raw data plust dynamic and static features as well as custom metrics to track
+    that handles raw data plus dynamic and static features as well as custom metrics to track
 
     Attributes
     ----------
