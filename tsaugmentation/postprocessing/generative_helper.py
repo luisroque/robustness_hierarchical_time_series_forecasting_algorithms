@@ -1,7 +1,6 @@
 from tensorflow import keras
 import numpy as np
 from tsaugmentation.feature_engineering.feature_transformations import detemporalize
-from sklearn.preprocessing import MinMaxScaler
 
 
 def generate_new_time_series(vae: keras.Model, init_samples_std: list[float], z: np.ndarray, window_size: int,
@@ -27,8 +26,6 @@ def generate_new_time_series(vae: keras.Model, init_samples_std: list[float], z:
     :return: predictions in the shape (n - window_size, s)
 
     """
-    np.random.seed(33)
-
     # generate based on the first mean and std value for the first point of the series
     id_seq = 0
 
