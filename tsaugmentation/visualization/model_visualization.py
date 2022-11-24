@@ -3,12 +3,13 @@ from keras.callbacks import History
 import numpy as np
 
 
-def plot_loss(history: History, first_index: int) -> None:
+def plot_loss(history: History, first_index: int, dataset_name: str) -> None:
     """
     Plot total loss, reconstruction loss and kl_loss per epoch
 
     :param history: recorded loss
     :param first_index: first index of the loss arrays to plot to avoid hard to read plots
+    :param dataset_name: name of the dataset to plot and store
     """
 
     _, ax = plt.subplots(1, 1, figsize=(8, 6))
@@ -20,6 +21,7 @@ def plot_loss(history: History, first_index: int) -> None:
     ax.set_ylabel("loss")
     ax.set_xlabel("epoch")
     plt.legend(["total_loss", "reconstruction_loss", "kl_loss"], loc="upper left")
+    plt.savefig(f"./plots/vae_loss_{dataset_name}.pdf", format="pdf", bbox_inches="tight")
     plt.show()
 
 

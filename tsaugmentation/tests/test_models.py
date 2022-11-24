@@ -19,15 +19,13 @@ from tensorflow import keras
 
 
 class TestModel(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree("./data/original_datasets")
 
     def setUp(self) -> None:
         self.window_size = 10
         self.latent_dim = 2
+        self.dataset_name = 'tourism'
         dataset = tsag.preprocessing.PreprocessDatasets(
-            "tourism"
+            self.dataset_name
         ).apply_preprocess()
         data = dataset["predict"]["data_matrix"]
         n = data.shape[0]
@@ -105,6 +103,6 @@ class TestModel(unittest.TestCase):
             shuffle=False,
         )
 
-        plot_loss(history, 0)
+        plot_loss(history, 0, self.dataset_name)
 
         self.assertTrue(history.history['loss'][-1] < 0.5)
