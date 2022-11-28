@@ -1,6 +1,5 @@
 import unittest
 import tsaugmentation as tsag
-import shutil
 import pandas as pd
 import numpy as np
 from tsaugmentation.feature_engineering.static_features import (

@@ -1,13 +1,8 @@
 import unittest
 import tsaugmentation as tsag
-import shutil
 
 
 class TestModel(unittest.TestCase):
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree("./data/original_datasets")
 
     def test_import_prison(self):
         self.data = tsag.preprocessing.PreprocessDatasets('prison', test_size=48*2).apply_preprocess()

@@ -1,6 +1,5 @@
 import unittest
 from tsaugmentation.transformations.create_dataset_versions import CreateTransformedVersions
-import shutil
 import os
 import matplotlib.pyplot as plt
 from tsaugmentation.transformations.compute_similarities_summary_metrics import ComputeSimilarities
@@ -20,20 +19,15 @@ class TestCreateTransformedDatasets(unittest.TestCase):
         self.transformed_datasets.create_new_version_single_transf()
         np.random.seed(0)
 
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree("./data/original_datasets")
-        shutil.rmtree("./data/transformed_datasets")
-
     def test_create_correct_number_transformed_datasets_single_transf(self):
         # shape (n_transformations + random_transf , n_versions, n_samples, n_points_train, n_series)
-        self.assertTrue(self.transformed_datasets.y_new_all.shape == (4, 6, 10, 204, 304))
+        self.assertTrue(self.transformed_datasets.y_new_all.shape == (4, 6, 10, 228, 304))
 
     def test_create_correct_number_transformed_datasets_FILES_single_transf(self):
         transformed_datasets = CreateTransformedVersions(self.dataset)
         transformed_datasets.create_new_version_single_transf()
         file_count = len([name for name in os.listdir('./data/transformed_datasets/')])
-        self.assertEqual(file_count, 25)
+        self.assertEqual(file_count, 76)
 
     def test_create_transformations_with_tourism_dataset(self):
         for i in range(4):
@@ -62,11 +56,11 @@ class TestCreateTransformedDatasets(unittest.TestCase):
                                                                 transf_dataset=self.transformed_datasets.y_new_all[2, 5, 9]) \
             .compute_mean_similarity_elementwise()
 
-        self.assertTrue(5000 < mean_sim_magnitude_warp_version_6 < 6000)
-        self.assertTrue(900 < mean_sim_magnitude_warp_version_1 < 1200)
+        self.assertTrue(4000 < mean_sim_magnitude_warp_version_6 < 7000)
+        self.assertTrue(900 < mean_sim_magnitude_warp_version_1 < 2000)
 
-        self.assertTrue(6500 < mean_sim_time_warp_version_6 < 7500)
-        self.assertTrue(4500 < mean_sim_time_warp_version_1 < 5500)
+        self.assertTrue(6000 < mean_sim_time_warp_version_6 < 8000)
+        self.assertTrue(5000 < mean_sim_time_warp_version_1 < 6500)
 
     def test_create_transformations_with_tourism_dataset_and_compare_with_files(self):
         vi = Visualizer(self.dataset)
