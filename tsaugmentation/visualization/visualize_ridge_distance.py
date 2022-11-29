@@ -69,6 +69,17 @@ def build_df_ridge(
     return df
 
 
+def store_df_distances(
+    df: pd.DataFrame, dataset_name: str, directory: str = "."
+) -> None:
+    df.to_pickle(f"{directory}/{dataset_name}_distances_transformed.pkl")
+
+
+def load_df_distances(dataset_name: str, directory: str = ".") -> pd.DataFrame:
+    df = pd.read_pickle(f"{directory}/{dataset_name}_distances_transformed.pkl")
+    return df
+
+
 def load_distances(dataset_name: str, directory: str = "."):
     with open(f"{directory}/{dataset_name}_distances_transformed.npy", "rb") as f:
         d_transf = np.load(f, allow_pickle=True)

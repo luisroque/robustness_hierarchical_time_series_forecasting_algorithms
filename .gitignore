@@ -63,4 +63,5 @@ dist/
 build/
 *.egg-info/
 
+*.pkl
 *.npy

@@ -6,6 +6,8 @@ from tsaugmentation.visualization.visualize_ridge_distance import (
     build_df_ridge,
     plot_distances,
     load_distances,
+    store_df_distances,
+    load_df_distances
 )
 from tsaugmentation.feature_engineering.get_data_distance import get_data
 import pathlib
@@ -51,8 +53,12 @@ class TestBuildingDistancePlots(unittest.TestCase):
         df_transf_load, d_orig_load = load_distances(self.dataset)
         self.assertTrue(df_transf_load.shape == (4, 6, 496))
 
-    def test_plot_distances(self):
+    def test_store_distances_df(self):
         df_ridge = build_df_ridge(
             self.d_transf, self.d_orig, self.n_d, self.transformations, self.versions
         )
+        store_df_distances(df_ridge, self.dataset)
+
+    def test_plot_distances(self):
+        df_ridge = load_df_distances(self.dataset)
         plot_distances(self.dataset, df_ridge, self.versions, x_range=[0, 10])
