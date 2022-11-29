@@ -69,10 +69,10 @@ def build_df_ridge(
     return df
 
 
-def load_distances(dataset_name: str):
-    with open(f"{dataset_name}_distances_transformed.npy", "rb") as f:
+def load_distances(dataset_name: str, directory: str = "."):
+    with open(f"{directory}/{dataset_name}_distances_transformed.npy", "rb") as f:
         d_transf = np.load(f, allow_pickle=True)
-    with open(f"{dataset_name}_distances_original.npy", "rb") as f:
+    with open(f"{directory}/{dataset_name}_distances_original.npy", "rb") as f:
         d_orig = np.load(f, allow_pickle=True)
     return d_transf, d_orig
 
