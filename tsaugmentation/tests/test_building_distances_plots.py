@@ -1,6 +1,5 @@
 import unittest
 import numpy as np
-import pandas as pd
 
 from tsaugmentation.transformations.compute_distances import compute_store_distances
 from tsaugmentation.visualization.visualize_ridge_distance import (
