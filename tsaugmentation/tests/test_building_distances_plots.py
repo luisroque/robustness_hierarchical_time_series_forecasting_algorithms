@@ -1,5 +1,7 @@
 import unittest
 import numpy as np
+import pandas as pd
+
 from tsaugmentation.transformations.compute_distances import compute_store_distances
 from tsaugmentation.visualization.visualize_ridge_distance import (
     build_df_ridge,
@@ -13,7 +15,7 @@ import pathlib
 class TestBuildingDistancePlots(unittest.TestCase):
     def setUp(self):
         base_path = pathlib.Path(__file__).parent.resolve()
-        self.dataset = "tourism"
+        self.dataset = "prison"
         self.versions = 6
         self.transformations = ["jitter", "scaling", "magnitude_warp", "time_warp"]
         self.data_orig, self.data_transf = get_data(
@@ -41,20 +43,17 @@ class TestBuildingDistancePlots(unittest.TestCase):
         )
 
     def test_build_df_distances(self):
-        self.df = build_df_ridge(
+        df_ridge = build_df_ridge(
             self.d_transf, self.d_orig, self.n_d, self.transformations, self.versions
         )
-        self.assertTrue(self.df.shape == (230280, 8))
+        self.assertTrue(self.df_ridge.shape == (1984, 8))
 
     def test_store_load_data(self):
-        self.df = build_df_ridge(
-            self.d_transf,
-            self.d_orig,
-            self.n_d,
-            self.transformations,
-            self.versions,
-        )
-        self.df_load = load_distances(self.dataset)
+        df_transf_load, d_orig_load = load_distances(self.dataset)
+        self.assertTrue(df_transf_load.shape == (4, 6, 496))
 
-    def plot_distances(self):
-        plot_distances("tourism", self.df_load, self.versions)
+    def test_plot_distances(self):
+        df_ridge = build_df_ridge(
+            self.d_transf, self.d_orig, self.n_d, self.transformations, self.versions
+        )
+        plot_distances(self.dataset, df_ridge, self.versions, x_range=[0, 10])

@@ -70,40 +70,49 @@ def build_df_ridge(
 
 
 def load_distances(dataset_name: str):
-    with open(f'{dataset_name}_distances_transformed.npy', 'rb') as f:
+    with open(f"{dataset_name}_distances_transformed.npy", "rb") as f:
         d_transf = np.load(f, allow_pickle=True)
-    with open(f'{dataset_name}_distances_original.npy', 'rb') as f:
+    with open(f"{dataset_name}_distances_original.npy", "rb") as f:
         d_orig = np.load(f, allow_pickle=True)
     return d_transf, d_orig
 
 
-def plot_distances(dataset_name: str, df_rige: pd.DataFrame, versions: int) -> pd.DataFrame:
+def plot_distances(
+    dataset_name: str,
+    df_rige: pd.DataFrame,
+    versions: int,
+    x_range: list[int] = None,
+) -> None:
     """Plot the distances for a specific dataset
 
     Args:
         dataset_name: name of the dataset
         df_rige: df with data in the correct shape for ridge plots
         versions: number of created versions of the dataset
+        x_range: range to plot in the x_axis
 
     Returns:
         Dataframe containing the distances for each version and transformation
     """
+    if x_range is None:
+        x_range = [6, 18]
     plt.figure()
     # map versions to a 0-1 interval to sample different blue colors
     m = interp1d([0, versions], [0, 0.8])
 
     ax, fig = joyplot(
         data=df_rige,
-        by='transformation',
+        by="transformation",
         legend=True,
         alpha=1,
         figsize=(7, 7),
-        x_range=[6, 18],
+        x_range=x_range,
         fill=False,
         overlap=5,
-        color=['darkorange'] + [cm.Blues_r(m(i)) for i in range(versions)]
+        color=["darkorange"] + [cm.Blues_r(m(i)) for i in range(versions)],
     )
-    plt.title(f'Ridgeline Plot for {dataset_name} of the DTW distance per version and transformation', fontsize=20)
+    plt.title(
+        f"Ridgeline Plot for {dataset_name} of the DTW distance per version and transformation",
+        fontsize=20,
+    )
     plt.show()
-
-    return df
