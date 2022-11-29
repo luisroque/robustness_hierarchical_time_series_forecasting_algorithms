@@ -62,3 +62,5 @@ plots/
 dist/
 build/
 *.egg-info/
+
+*.npy

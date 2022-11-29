@@ -1,6 +1,5 @@
 import unittest
 import tsaugmentation as tsag
-import shutil
 import pandas as pd
 import numpy as np
 from tsaugmentation.feature_engineering.static_features import (
@@ -17,10 +16,6 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 class TestModel(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree("./data/original_datasets")
-
     def setUp(self) -> None:
         self.window_size = 10
         self.latent_dim = 2

@@ -21,7 +21,7 @@ class Visualizer:
         number of series to plot
     """
 
-    def __init__(self, dataset, n_versions=6, n_series=6, input_dir='./', transf_data='train'):
+    def __init__(self, dataset, n_versions=6, n_series=6, input_dir='./', transf_data='whole'):
         self.n_series = n_series
         self.dataset = dataset
         self.n_versions = n_versions

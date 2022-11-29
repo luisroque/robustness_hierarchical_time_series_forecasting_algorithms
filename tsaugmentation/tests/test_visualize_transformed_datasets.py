@@ -1,7 +1,6 @@
 import unittest
 from tsaugmentation.visualization.visualize_transformed_datasets import Visualizer
 from tsaugmentation.transformations.create_dataset_versions import CreateTransformedVersions
-import shutil
 
 
 class TestCreateTransformedDatasets(unittest.TestCase):
@@ -15,7 +14,5 @@ class TestCreateTransformedDatasets(unittest.TestCase):
         vi = Visualizer(self.dataset)
         vi._read_files(method='single_transf_jitter')
 
-        shutil.rmtree("./data/original_datasets")
-        shutil.rmtree("./data/transformed_datasets")
-        self.assertTrue(vi.y_new.shape == (6, 10, 40, 32))
-        self.assertTrue(vi.y.shape == (40, 32))
+        self.assertTrue(vi.y_new.shape == (6, 10, 48, 32))
+        self.assertTrue(vi.y.shape == (48, 32))

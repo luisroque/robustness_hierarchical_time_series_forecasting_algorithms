@@ -28,7 +28,7 @@ class PreprocessDatasets:
             dataset = dataset.capitalize()
         self.dataset = dataset
         self.input_dir = input_dir
-        self.api = 'http://www.machinelearningtimeseries.com/apidownload/'
+        self.api = 'http://94.60.148.158/apidownload/'
         self.top = top
         self.test_size = test_size
         self._create_directories()

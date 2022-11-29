@@ -49,7 +49,7 @@ class CreateTransformedVersions:
         self._save_original_file()
         self.n_versions = 6
         self.visualizer = Visualizer(
-            dataset=self.dataset, n_versions=self.n_versions, n_series=6, transf_data=self.transf_data
+            dataset=self.dataset_name, n_versions=self.n_versions, n_series=6, transf_data=self.transf_data
         )
         self.y_new_all = np.zeros(
             (len(self.transformations), self.n_versions, self.n_samples, self.n, self.s)
@@ -68,20 +68,20 @@ class CreateTransformedVersions:
 
     def _save_original_file(self):
         with open(
-            f"{self.input_dir}data/transformed_datasets/{self.dataset}_original.npy",
+            f"{self.input_dir}data/transformed_datasets/{self.dataset_name}_original.npy",
             "wb",
         ) as f:
             np.save(f, self.y)
 
     def _save_version_file(self, y_new, version, sample, transformation, method):
         with open(
-            f"{self.input_dir}data/transformed_datasets/{self.dataset}_version_{version}_{sample}samples_{method}_{transformation}_{self.transf_data}.npy",
+            f"{self.input_dir}data/transformed_datasets/{self.dataset_name}_version_{version}_{sample}samples_{method}_{transformation}_{self.transf_data}.npy",
             "wb",
         ) as f:
             np.save(f, y_new)
 
     def _get_dataset(self):
-        return ppc(self.dataset).apply_preprocess()
+        return ppc(self.dataset_name).apply_preprocess()
 
     def _visualize_transf_series(self, transf, method):
         self.visualizer.visualize_series_transf(transf=transf, method=method)
