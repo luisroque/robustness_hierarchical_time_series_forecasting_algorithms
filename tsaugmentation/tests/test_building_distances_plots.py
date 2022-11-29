@@ -1,6 +1,5 @@
 import unittest
 import numpy as np
-import pandas as pd
 
 from tsaugmentation.transformations.compute_distances import compute_store_distances
 from tsaugmentation.visualization.visualize_ridge_distance import (
@@ -46,7 +45,7 @@ class TestBuildingDistancePlots(unittest.TestCase):
         df_ridge = build_df_ridge(
             self.d_transf, self.d_orig, self.n_d, self.transformations, self.versions
         )
-        self.assertTrue(self.df_ridge.shape == (1984, 8))
+        self.assertTrue(df_ridge.shape == (1984, 8))
 
     def test_store_load_data(self):
         df_transf_load, d_orig_load = load_distances(self.dataset)

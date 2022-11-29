@@ -47,6 +47,7 @@ def compute_store_distances(
     transf: np.ndarray,
     transformations: list[str],
     versions: int,
+    directory: str = '.'
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute DTW for each time series in the dataset
 
@@ -56,6 +57,7 @@ def compute_store_distances(
         transf: array with transformed data
         transformations: list of transformations
         versions: number of versions that exist of the dataset
+        directory: local directory to store the file
 
     Returns:
         Arrays containing respectively the original distances and the transformed ones
@@ -72,9 +74,9 @@ def compute_store_distances(
         orig_scaled, transf, s, transformations, versions
     )
 
-    with open(f"{dataset_name}_distances_transformed.npy", "wb") as f:
+    with open(f"{directory}/{dataset_name}_distances_transformed.npy", "wb") as f:
         np.save(f, d_transf, allow_pickle=True)
-    with open(f"{dataset_name}_distances_original.npy", "wb") as f:
+    with open(f"{directory}/{dataset_name}_distances_original.npy", "wb") as f:
         np.save(f, d_orig, allow_pickle=True)
 
     return d_orig, d_transf
