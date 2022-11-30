@@ -34,3 +34,7 @@ class TestModel(unittest.TestCase):
         )
         # shape (n_versions, n_samples_generated, n_samples_dataset, n_series)
         self.assertTrue(new_datasets.shape == (2, 3, 48, 32))
+
+    def test_dynamic_features_creation(self):
+        dynamic_feat, _, _ = self.create_dataset_vae._feature_engineering(48)
+        self.assertTrue(len(dynamic_feat) == 4)

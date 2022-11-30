@@ -27,3 +27,4 @@ class TestModel(unittest.TestCase):
             )[0]
             < 20
         )
+

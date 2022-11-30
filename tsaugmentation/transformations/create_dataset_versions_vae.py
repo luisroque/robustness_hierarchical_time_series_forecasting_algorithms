@@ -168,9 +168,9 @@ class CreateTransformedVersionsVAE:
         if n == self.n:
             # if we want to generate new time series with the same size
             # as the original ones
-            self.dynamic_features = create_dynamic_features(self.df_generate)
+            self.dynamic_features = create_dynamic_features(self.df_generate, self.freq)
         else:
-            self.dynamic_features = create_dynamic_features(self.df)
+            self.dynamic_features = create_dynamic_features(self.df, self.freq)
 
         X_train, y_train = temporalize(X_train_raw_scaled, self.window_size)
 
