@@ -51,9 +51,10 @@ def plot_generated_vs_original(
         n_series -= 1
     _, ax = plt.subplots(int(n_series // 2), int(n_series // 4), figsize=(18, 10))
     ax = ax.ravel()
+    n_samples = X_train_raw.shape[0]
     for i in range(n_series):
-        ax[i].plot(dec_pred_hat[:, i], label="new sample")
-        ax[i].plot(X_train_raw[:, i], label="orig")
+        ax[i].plot(np.arange(n_samples), dec_pred_hat[:, i], label="new sample")
+        ax[i].plot(np.arange(n_samples), X_train_raw[:, i], label="orig")
     plt.legend()
     plt.suptitle(
         f"VAE generated dataset vs original -> {dataset_name} with sigma={param_vae}",

@@ -38,7 +38,7 @@ def create_static_features(window_size: int, groups: list, dataset: dict, n: int
     for group in groups:
         groups_arrays[group] = {}
         groups_arrays[group] = get_group_features(group, dataset)
-        groups_arrays[group] = np.tile(groups_arrays[group].reshape(-1, 1), n).T[window_size:]
+        groups_arrays[group] = np.tile(groups_arrays[group].reshape(-1, 1), n).T
 
     return groups_arrays
 
