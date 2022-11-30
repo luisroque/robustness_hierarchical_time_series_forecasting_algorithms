@@ -8,9 +8,10 @@ from tsaugmentation.transformations.compute_similarities_summary_metrics import 
 
 
 class TestModel(unittest.TestCase):
-
     def setUp(self) -> None:
-        self.create_dataset_vae = CreateTransformedVersionsVAE("tourism")
+        self.create_dataset_vae = CreateTransformedVersionsVAE(
+            dataset_name="tourism", freq="M"
+        )
 
         self.model, _ = self.create_dataset_vae.fit(epochs=5)
         self.preds, self.z = self.create_dataset_vae.predict(self.model)

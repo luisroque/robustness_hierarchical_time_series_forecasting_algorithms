@@ -3,12 +3,17 @@ import numpy as np
 from tsaugmentation.feature_engineering.feature_transformations import detemporalize
 
 
-def generate_new_time_series(vae: keras.Model, init_samples_std: list[float], z: np.ndarray, window_size: int,
-                             dynamic_features_inp: list[np.ndarray],
-                             static_features_inp: list[np.ndarray],
-                             scaler_target: object,
-                             n_features: int,
-                             n: int) -> np.ndarray:
+def generate_new_time_series(
+    vae: keras.Model,
+    init_samples_std: list[float],
+    z: np.ndarray,
+    window_size: int,
+    dynamic_features_inp: list[np.ndarray],
+    static_features_inp: list[np.ndarray],
+    scaler_target: object,
+    n_features: int,
+    n: int,
+) -> np.ndarray:
     """
     Sample first point of the series from the latent space and
     generate rest of the series using the learned decoder
@@ -38,7 +43,12 @@ def generate_new_time_series(vae: keras.Model, init_samples_std: list[float], z:
         d_feat = [dy[id_seq, :].reshape(1, window_size) for dy in dynamic_features_inp]
         s_feat = [st[id_seq, :].reshape(1, n_features, 1) for st in static_features_inp]
         dec_pred.append(
-            vae.decoder.predict([np.asarray([[x_mean_sample, x_std_sample]]).transpose(0, 2, 1)] + d_feat + s_feat))
+            vae.decoder.predict(
+                [np.asarray([[x_mean_sample, x_std_sample]]).transpose(0, 2, 1)]
+                + d_feat
+                + s_feat
+            )
+        )
 
     dec_pred_hat = detemporalize(np.squeeze(np.array(dec_pred)))
     dec_pred_hat = scaler_target.inverse_transform(dec_pred_hat)

@@ -26,20 +26,23 @@ class CreateTransformedVersionsVAE:
 
     Attributes
     ----------
-    dataset : str
-        the original dataset to consider
-    rel_dir : str
-        relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
-    transf_data: str
-        what data to transform: only training data 'train' or the whole dataset 'whole'
+    dataset : the original dataset to consider
+    freq: frequency of the dataset
+    rel_dir : relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
+    transf_data: what data to transform: only training data 'train' or the whole dataset 'whole'
     """
 
     def __init__(
-        self, dataset_name: str, input_dir: str = "./", transf_data: str = "whole"
+        self,
+        dataset_name: str,
+        freq: str,
+        input_dir: str = "./",
+        transf_data: str = "whole",
     ):
         self.dataset_name = dataset_name
         self.input_dir = input_dir
         self.transf_data = transf_data
+        self.freq = freq
         self.dataset = self._get_dataset()
         self.window_size = 10
         self.latent_dim = 2
@@ -53,8 +56,18 @@ class CreateTransformedVersionsVAE:
         self.df = pd.DataFrame(data)
         self.df = pd.concat(
             [self.df, pd.DataFrame(self.dataset["dates"], columns=["Date"])], axis=1
-        )[: data.shape[0]]
+        )[: self.n]
         self.df = self.df.set_index("Date")
+        self.df.asfreq(self.freq)
+
+        # Create dataset with 10 more months in the past to be used
+        ix = pd.date_range(
+            start=self.df.index[0] - pd.DateOffset(months=10),
+            end=self.df.index[-1],
+            freq=self.freq + "S",  # S ensures that we are at the start of the period
+        )
+        self.df_generate = self.df.copy()
+        self.df_generate = self.df_generate.reindex(ix)
         self.features_input = (None, None, None)
 
         self._create_directories()
@@ -108,28 +121,38 @@ class CreateTransformedVersionsVAE:
         ) as f:
             np.save(f, y_new)
 
-    def _generate_static_features(self):
-        """
-        Helper method to create the static feature and scale them
+    def _generate_static_features(self, n: int) -> None:
+        """Helper method to create the static feature and scale them
+
+        Args:
+            n: number of samples
         """
         static_features = create_static_features(
-            self.window_size, self.groups, self.dataset, self.n
+            self.window_size, self.groups, self.dataset, n
         )
         self.static_features_scaled = scale_static_features(static_features)
 
     def _feature_engineering(
-        self,
+        self, n: int
     ) -> tuple[list[np.ndarray], list[np.ndarray], list[np.ndarray]]:
-        """
-        Create static and dynamic features as well as apply preprocess to raw time series
+        """Create static and dynamic features as well as apply preprocess to raw time series
+
+        Args:
+            n: number of samples
         """
         self.X_train_raw = self.df.astype(np.float32).to_numpy()
 
         self.scaler_target = MinMaxScaler().fit(self.X_train_raw)
         X_train_raw_scaled = self.scaler_target.transform(self.X_train_raw)
 
-        self._generate_static_features()
-        self.dynamic_features = create_dynamic_features(self.df)
+        self._generate_static_features(n)
+
+        if n == self.n:
+            # if we want to generate new time series with the same size
+            # as the original ones
+            self.dynamic_features = create_dynamic_features(self.df_generate)
+        else:
+            self.dynamic_features = create_dynamic_features(self.df)
 
         X_train, y_train = temporalize(X_train_raw_scaled, self.window_size)
 
@@ -168,7 +191,7 @@ class CreateTransformedVersionsVAE:
         """
         if not mv_normal_dim:
             mv_normal_dim = self.n_features
-        self.features_input = self._feature_engineering()
+        self.features_input = self._feature_engineering(self.n_train)
 
         encoder, decoder = get_mv_model(
             mv_normal_dim=mv_normal_dim,
@@ -262,32 +285,30 @@ class CreateTransformedVersionsVAE:
         Returns:
             new generated dataset
         """
+        self.features_input = self._feature_engineering(self.n)
+        dynamic_feat, X_inp, static_feat = self.features_input
+
         dec_pred_hat = generate_new_time_series(
             vae,
             [std_latent_space, std_latent_space],
             z,
             self.window_size,
-            self.dynamic_features_inp,
-            self.static_features_inp,
+            dynamic_feat,
+            static_feat,
             self.scaler_target,
             self.n_features,
-            self.n_train,
-        )
-
-        # To train the VAE the first points (equal to the window size) of the dataset were not predicted
-        dec_pred_hat_complete = np.concatenate(
-            (self.X_train_raw[:10], dec_pred_hat), axis=0
+            self.n,
         )
 
         if plot_predictions:
             plot_generated_vs_original(
-                dec_pred_hat_complete,
+                dec_pred_hat,
                 self.X_train_raw,
                 std_latent_space,
                 self.dataset_name,
                 n_series_plot,
             )
-        return dec_pred_hat_complete
+        return dec_pred_hat
 
     def generate_new_datasets(
         self,
