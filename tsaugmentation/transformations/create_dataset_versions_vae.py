@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from tensorflow import keras
 from keras.callbacks import EarlyStopping
+from tsaugmentation.visualization.model_visualization import plot_generated_vs_original
 
 
 class CreateTransformedVersionsVAE:
@@ -239,18 +240,27 @@ class CreateTransformedVersionsVAE:
         return X_hat_complete, z
 
     def generate_transformed_time_series(
-        self, vae: VAE, z: np.ndarray, std_latent_space: float
+        self,
+        vae: VAE,
+        z: np.ndarray,
+        std_latent_space: float,
+        plot_predictions: bool = True,
+        n_series_plot: int = 8,
     ) -> np.ndarray:
         """
         Generate new time series by sampling from the latent space
 
-        :param vae: trained model
-        :param z: parameters of the latent space distribution (gaussian) of shape
-                    [num_samples, window_size, param] where param is 0 (mean) or 1 (std)
-        :param std_latent_space: standard deviation to use when sampling from the learned distributions
-                    e.g. x_mean_sample = np.random.normal(z[id_seq, :, 0], std_latent_space[0])
+        Args:
+            vae: trained model
+            z: parameters of the latent space distribution (gaussian) of shape
+                        [num_samples, window_size, param] where param is 0 (mean) or 1 (std)
+            std_latent_space: standard deviation to use when sampling from the learned distributions
+                        e.g. x_mean_sample = np.random.normal(z[id_seq, :, 0], std_latent_space[0])
+            plot_predictions: plot some examples of generated series vs original and store in pdf
+            n_series_plot: number of series to plot
 
-        :return: new generated dataset
+        Returns:
+            new generated dataset
         """
         dec_pred_hat = generate_new_time_series(
             vae,
@@ -268,6 +278,15 @@ class CreateTransformedVersionsVAE:
         dec_pred_hat_complete = np.concatenate(
             (self.X_train_raw[:10], dec_pred_hat), axis=0
         )
+
+        if plot_predictions:
+            plot_generated_vs_original(
+                dec_pred_hat_complete,
+                self.X_train_raw,
+                std_latent_space,
+                self.dataset_name,
+                n_series_plot,
+            )
         return dec_pred_hat_complete
 
     def generate_new_datasets(

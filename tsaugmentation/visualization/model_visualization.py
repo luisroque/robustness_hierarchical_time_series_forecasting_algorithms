@@ -30,8 +30,10 @@ def plot_loss(history: History, first_index: int, dataset_name: str) -> None:
 def plot_generated_vs_original(
     dec_pred_hat: np.ndarray,
     X_train_raw: np.ndarray,
+    param_vae: float,
     dataset_name: str,
     n_series: int = 8,
+    directory: str = ".",
 ) -> None:
     """
     Plot generated series and the original series and store as pdf
@@ -39,8 +41,10 @@ def plot_generated_vs_original(
     Args:
         dec_pred_hat: predictions
         X_train_raw: original series
+        param_vae: the parameter used in the VAE sampling
         dataset_name: name of the generated dataset
         n_series: number of series to plot
+        directory: local directory to store the file
     """
     # n_series needs to be even
     if not n_series % 2 == 0:
@@ -51,8 +55,12 @@ def plot_generated_vs_original(
         ax[i].plot(dec_pred_hat[:, i], label="new sample")
         ax[i].plot(X_train_raw[:, i], label="orig")
     plt.legend()
+    plt.suptitle(
+        f"VAE generated dataset vs original -> {dataset_name} with sigma={param_vae}",
+        fontsize=14,
+    )
     plt.savefig(
-        f"./plots/vae_generated_vs_original_{dataset_name}.pdf",
+        f"{directory}/plots/vae_generated_vs_original_{dataset_name}_{param_vae}.pdf",
         format="pdf",
         bbox_inches="tight",
     )
