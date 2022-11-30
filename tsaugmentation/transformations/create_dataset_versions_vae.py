@@ -61,9 +61,11 @@ class CreateTransformedVersionsVAE:
         self.df.asfreq(self.freq)
 
         # Create dataset with window_size more dates in the past to be used
-        if self.freq == 'QS':
+        if self.freq == 'Q':
+            self.freq += 'S'
             start_date = self.df.index[0] - pd.DateOffset(months=10*3)
-        elif self.freq == 'MS':
+        elif self.freq == 'M':
+            self.freq += 'S'
             start_date = self.df.index[0] - pd.DateOffset(months=10)
         elif self.freq == 'W':
             start_date = self.df.index[0] - pd.DateOffset(weeks=10)
