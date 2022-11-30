@@ -1,4 +1,4 @@
-__version__ = "0.5.7"
+__version__ = "0.5.8"
 
 from tsaugmentation import preprocessing
 from tsaugmentation import transformations
