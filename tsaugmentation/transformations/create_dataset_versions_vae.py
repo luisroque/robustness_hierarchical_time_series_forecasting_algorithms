@@ -60,20 +60,20 @@ class CreateTransformedVersionsVAE:
         self.df = self.df.set_index("Date")
         self.df.asfreq(self.freq)
 
-        # Create dataset with window_size more dates in the past to be used
+        # Create dataset with window_size more dates in the future to be used
         if self.freq == 'Q':
             self.freq += 'S'
-            start_date = self.df.index[0] - pd.DateOffset(months=10*3)
+            end_date = self.df.index[-1] + pd.DateOffset(months=10*3)
         elif self.freq == 'M':
             self.freq += 'S'
-            start_date = self.df.index[0] - pd.DateOffset(months=10)
+            end_date = self.df.index[-1] + pd.DateOffset(months=10)
         elif self.freq == 'W':
-            start_date = self.df.index[0] - pd.DateOffset(weeks=10)
+            end_date = self.df.index[-1] + pd.DateOffset(weeks=10)
         elif self.freq == 'D':
-            start_date = self.df.index[0] - pd.DateOffset(days=10)
+            end_date = self.df.index[-1] + pd.DateOffset(days=10)
         ix = pd.date_range(
-            start=start_date,
-            end=self.df.index[-1],
+            start=self.df.index[0],
+            end=end_date,
             freq=self.freq,
         )
         self.df_generate = self.df.copy()
