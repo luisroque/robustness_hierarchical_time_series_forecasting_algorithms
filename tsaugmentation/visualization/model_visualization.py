@@ -21,19 +21,26 @@ def plot_loss(history: History, first_index: int, dataset_name: str) -> None:
     ax.set_ylabel("loss")
     ax.set_xlabel("epoch")
     plt.legend(["total_loss", "reconstruction_loss", "kl_loss"], loc="upper left")
-    plt.savefig(f"./plots/vae_loss_{dataset_name}.pdf", format="pdf", bbox_inches="tight")
+    plt.savefig(
+        f"./plots/vae_loss_{dataset_name}.pdf", format="pdf", bbox_inches="tight"
+    )
     plt.show()
 
 
 def plot_generated_vs_original(
-    dec_pred_hat: np.ndarray, X_train_raw: np.ndarray, n_series: int = 8
+    dec_pred_hat: np.ndarray,
+    X_train_raw: np.ndarray,
+    dataset_name: str,
+    n_series: int = 8,
 ) -> None:
     """
-    Plot generated series and the original series
+    Plot generated series and the original series and store as pdf
 
-    :param dec_pred_hat: predictions
-    :param X_train_raw: original series
-    :para n_series: number of series to plot
+    Args:
+        dec_pred_hat: predictions
+        X_train_raw: original series
+        dataset_name: name of the generated dataset
+        n_series: number of series to plot
     """
     # n_series needs to be even
     if not n_series % 2 == 0:
@@ -44,4 +51,9 @@ def plot_generated_vs_original(
         ax[i].plot(dec_pred_hat[:, i], label="new sample")
         ax[i].plot(X_train_raw[:, i], label="orig")
     plt.legend()
+    plt.savefig(
+        f"./plots/vae_generated_vs_original_{dataset_name}.pdf",
+        format="pdf",
+        bbox_inches="tight",
+    )
     plt.show()
