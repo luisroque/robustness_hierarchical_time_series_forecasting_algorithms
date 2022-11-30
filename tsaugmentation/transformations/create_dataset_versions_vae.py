@@ -30,6 +30,7 @@ class CreateTransformedVersionsVAE:
     freq: frequency of the dataset
     rel_dir : relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
     transf_data: what data to transform: only training data 'train' or the whole dataset 'whole'
+    top: number of series to consider from the dataset
     """
 
     def __init__(
@@ -38,11 +39,13 @@ class CreateTransformedVersionsVAE:
         freq: str,
         input_dir: str = "./",
         transf_data: str = "whole",
+        top: int = None
     ):
         self.dataset_name = dataset_name
         self.input_dir = input_dir
         self.transf_data = transf_data
         self.freq = freq
+        self.top = top
         self.dataset = self._get_dataset()
         self.window_size = 10
         self.latent_dim = 2
@@ -87,7 +90,12 @@ class CreateTransformedVersionsVAE:
         """
         Get dataset and apply preprocessing
         """
-        return ppc(self.dataset_name).apply_preprocess()
+        if self.top:
+            dataset = ppc(self.dataset_name, top=self.top).apply_preprocess()
+        else:
+            dataset = ppc(self.dataset_name).apply_preprocess()
+
+        return dataset
 
     def _create_directories(self):
         """

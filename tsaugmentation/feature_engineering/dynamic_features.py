@@ -15,14 +15,27 @@ def create_dynamic_features(df: pd.DataFrame) -> pd.DataFrame:
     """
 
     train_df_input = pd.DataFrame()
-    train_df_input['year_cos'] = np.cos(
-        2 * np.pi * (df.index.year - df.index.year.min()) / (df.index.year.max() - df.index.year.min()))
-    train_df_input['year_sin'] = np.sin(
-        2 * np.pi * (df.index.year - df.index.year.min()) / (df.index.year.max() - df.index.year.min()))
-    train_df_input['month_cos'] = np.cos(
-        2 * np.pi * (df.index.month - df.index.month.min()) / (df.index.month.max() - df.index.month.min()))
-    train_df_input['month_sin'] = np.sin(
-        2 * np.pi * (df.index.month - df.index.month.min()) / (df.index.month.max() - df.index.month.min()))
+
+    if (df.index.year.max() - df.index.year.min()) > 0:
+        train_df_input['year_cos'] = np.cos(
+            2 * np.pi * (df.index.year - df.index.year.min()) / (df.index.year.max() - df.index.year.min()))
+        train_df_input['year_sin'] = np.sin(
+            2 * np.pi * (df.index.year - df.index.year.min()) / (df.index.year.max() - df.index.year.min()))
+    if (df.index.month.max() - df.index.month.min()) > 0:
+        train_df_input['month_cos'] = np.cos(
+            2 * np.pi * (df.index.month - df.index.month.min()) / (df.index.month.max() - df.index.month.min()))
+        train_df_input['month_sin'] = np.sin(
+            2 * np.pi * (df.index.month - df.index.month.min()) / (df.index.month.max() - df.index.month.min()))
+    if (df.index.week.max() - df.index.week.min()) > 0:
+        train_df_input['week_cos'] = np.cos(
+            2 * np.pi * (df.index.week - df.index.week.min()) / (df.index.week.max() - df.index.week.min()))
+        train_df_input['week_sin'] = np.sin(
+            2 * np.pi * (df.index.week - df.index.week.min()) / (df.index.week.max() - df.index.week.min()))
+    if (df.index.day.max() - df.index.day.min()) > 0:
+        train_df_input['day_cos'] = np.cos(
+            2 * np.pi * (df.index.day - df.index.day.min()) / (df.index.day.max() - df.index.day.min()))
+        train_df_input['day_sin'] = np.sin(
+            2 * np.pi * (df.index.day - df.index.day.min()) / (df.index.day.max() - df.index.day.min()))
 
     return train_df_input.astype(np.float32)
 
