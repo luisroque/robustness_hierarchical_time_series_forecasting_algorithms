@@ -9,6 +9,7 @@ def compute_distances(
     s: int,
     transformations: list,
     versions: int,
+    window: int = 20,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute distances between each series in a dataset
 
@@ -18,12 +19,17 @@ def compute_distances(
         s: number of time series
         transformations: set of transformations applied to this dataset
         versions: number of different versions stored of this dataset
+        window: Only allow for shifts up to this amount away from the two diagonals
 
     Returns:
         Array with the distances between series
     """
 
-    d_orig = np.array(dtw.distance_matrix_fast(orig_scaled.T, compact=True))
+    d_orig = np.array(
+        dtw.distance_matrix_fast(
+            orig_scaled.T, compact=True, only_triu=True, window=window
+        )
+    )
 
     # Scaling the data and compute the DTW distance
     d_transf = np.zeros((len(transformations), versions, int(s * (s - 1) / 2)))
@@ -35,7 +41,9 @@ def compute_distances(
             transf_scaled = scaler.transform(transf[t][v][0])
 
             d_transf[t][v] = np.array(
-                dtw.distance_matrix_fast(transf_scaled.T, compact=True)
+                dtw.distance_matrix_fast(
+                    transf_scaled.T, compact=True, only_triu=True, window=window
+                )
             )
 
     return d_orig, d_transf
@@ -47,7 +55,7 @@ def compute_store_distances(
     transf: np.ndarray,
     transformations: list[str],
     versions: int,
-    directory: str = '.'
+    directory: str = ".",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute DTW for each time series in the dataset
 
