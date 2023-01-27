@@ -73,7 +73,7 @@ class PreprocessDatasets:
         prison.drop("t", axis=1)
         prison["Date"] = pd.PeriodIndex(prison["Date"], freq="Q").to_timestamp()
         prison_pivot = prison.pivot(
-            index="t", columns=["state", "gender", "legal"], values="count"
+            index="Date", columns=["state", "gender", "legal"], values="count"
         )
 
         groups_input = {"state": [0], "gender": [1], "legal": [2]}
