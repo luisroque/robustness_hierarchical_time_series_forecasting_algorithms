@@ -102,10 +102,14 @@ def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_per
             y_ = y.iloc[:-h, :]
             if sample_perc:
                 groups[i]["x_values"] = x_values[:-h]
+            else:
+                groups[i]["x_values"] = list(np.arange(y_.shape[0]))
         else:
             y_ = y
             if sample_perc:
                 groups[i]["x_values"] = x_values
+            else:
+                groups[i]["x_values"] = list(np.arange(y_.shape[0]))
         groups[i]["groups_idx"] = {}
         groups[i]["groups_n"] = {}
         groups[i]["groups_names"] = {}
