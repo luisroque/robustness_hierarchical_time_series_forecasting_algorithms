@@ -49,7 +49,7 @@ class DataTransform:
         return pred
 
 
-def sample_data(y: pd.DataFrame, dates: List, sample_perc: float):
+def sample_data(y: pd.DataFrame, dates: List, sample_perc: float, h: int):
     """
     Samples data from the original dataframe and dates
 
@@ -59,11 +59,13 @@ def sample_data(y: pd.DataFrame, dates: List, sample_perc: float):
         sample_perc: percentage of the dataset to sample from the original
     """
     y_reindex = y.reset_index()
-    # we want to keep the first and last point
+    # we want to keep the first and last point of the train data
+    # we also only want to sample the training and not the test data
     y_reindex_copy = y_reindex.copy()
-    y_reindex_copy.drop([0, y_reindex.index[-1]], inplace=True)
-    sampled_df = y_reindex_copy.sample(frac=0.5)
-    sampled_with_ends = pd.concat([y_reindex.iloc[[0, -1]], sampled_df], ignore_index=True)
+    y_reindex_copy = y_reindex_copy[~y_reindex_copy.index.isin(y_reindex.iloc[-h - 1:].index)]
+    y_reindex_copy = y_reindex_copy[~y_reindex_copy.index.isin(y_reindex.iloc[0].index)]
+    sampled_df = y_reindex_copy.sample(frac=sample_perc)
+    sampled_with_ends = pd.concat([y_reindex[:1], y_reindex.iloc[-h-1:], sampled_df], ignore_index=True)
 
     sampled_with_ends_date = sampled_with_ends.set_index("Date")
     sample_index = sampled_with_ends_date.index
@@ -90,7 +92,7 @@ def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_per
         2) There is a multiIndex column structure for each group
     """
     if sample_perc:
-        y, dates, x_values = sample_data(y, dates, sample_perc=sample_perc)
+        y, dates, x_values = sample_data(y, dates, sample_perc=sample_perc, h=h)
 
     groups = {}
 
