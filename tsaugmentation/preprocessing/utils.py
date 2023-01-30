@@ -59,16 +59,28 @@ def sample_data(y: pd.DataFrame, dates: List, sample_perc: float):
         sample_perc: percentage of the dataset to sample from the original
     """
     y_reindex = y.reset_index()
-    sample_index = y_reindex.sample(frac=sample_perc).index
-    y_sample = y_reindex.iloc[sample_index.sort_values()]
-    original_index = y_reindex.index
+    # we want to keep the first and last point
+    y_reindex_copy = y_reindex.copy()
+    y_reindex_copy.drop([0, y_reindex.index[-1]], inplace=True)
+    sampled_df = y_reindex_copy.sample(frac=0.5)
+    sampled_with_ends = pd.concat([y_reindex.iloc[[0, -1]], sampled_df], ignore_index=True)
+
+    sampled_with_ends_date = sampled_with_ends.set_index("Date")
+    sample_index = sampled_with_ends_date.index
+    y_reindex_date = y_reindex.set_index('Date')
+    y_sample = y_reindex_date[y_reindex_date.index.isin(sample_index)]
+    original_index = y_reindex_date.index
     sample_index = y_sample.index
     difference_index = original_index.intersection(sample_index)
 
-    dates = [dates[i] for i in difference_index]
-    y_sample = y_sample.set_index("Date")
+    filtered_dates = []
+    x_values = []
+    for i in range(len(y_reindex)):
+        if y_reindex_date.index[i] in difference_index:
+            filtered_dates.append(dates[i])
+            x_values.append(i)
 
-    return y_sample, dates
+    return y_sample, filtered_dates, x_values
 
 
 def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_perc=0.5):
@@ -78,13 +90,15 @@ def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_per
         2) There is a multiIndex column structure for each group
     """
     if sample_perc:
-        y, dates = sample_data(y, dates, sample_perc=sample_perc)
+        y, dates, x_values = sample_data(y, dates, sample_perc=sample_perc)
 
     groups = {}
 
     for i in ["train", "predict"]:
         if i == "train":
             y_ = y.iloc[:-h, :]
+            if sample_perc:
+                x_values = x_values[:-h]
         else:
             y_ = y
         groups[i] = {}
@@ -94,6 +108,8 @@ def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_per
 
         groups[i]["n"] = y_.shape[0]
         groups[i]["s"] = y_.shape[1]
+        if sample_perc:
+            groups[i]["x_values"] = x_values
         n_series = y.columns.unique().shape[0]
 
         # Test if we are receiving format 1) or 2)
