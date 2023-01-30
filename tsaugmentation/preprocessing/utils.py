@@ -97,22 +97,21 @@ def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_per
     groups = {}
 
     for i in ["train", "predict"]:
+        groups[i] = {}
         if i == "train":
             y_ = y.iloc[:-h, :]
             if sample_perc:
-                x_values = x_values[:-h]
+                groups[i]["x_values"] = x_values[:-h]
         else:
             y_ = y
-        groups[i] = {}
+            if sample_perc:
+                groups[i]["x_values"] = x_values
         groups[i]["groups_idx"] = {}
         groups[i]["groups_n"] = {}
         groups[i]["groups_names"] = {}
 
         groups[i]["n"] = y_.shape[0]
         groups[i]["s"] = y_.shape[1]
-        if sample_perc:
-            groups[i]["x_values"] = x_values
-        n_series = y.columns.unique().shape[0]
 
         # Test if we are receiving format 1) or 2)
         if len(next(iter(groups_input.values()))) == 1:
