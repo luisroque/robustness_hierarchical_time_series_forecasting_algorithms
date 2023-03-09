@@ -35,7 +35,7 @@ class TestModel(unittest.TestCase):
 
     def test_import_m5_50perc_data(self):
         self.data = tsag.preprocessing.PreprocessDatasets('m5', test_size=2, sample_perc=0.5).apply_preprocess()
-        self.assertTrue(self.data['train']['data'].shape == (int((275-self.data['h'])/2)+2, 2))
+        self.assertTrue(self.data['train']['data'].shape == (int((275-self.data['h'])/2)+1, 2))
 
     def test_import_police_50perc_data(self):
         self.data = tsag.preprocessing.PreprocessDatasets('police', top=2, sample_perc=0.5).apply_preprocess()

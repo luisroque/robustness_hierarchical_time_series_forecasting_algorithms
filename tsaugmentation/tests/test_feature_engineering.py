@@ -219,7 +219,7 @@ class TestModel(unittest.TestCase):
         )
 
     def test_creating_dynamic_features(self):
-        dynamic_features = create_dynamic_features(self.df)
+        dynamic_features = create_dynamic_features(self.df, "MS")
 
         pd.testing.assert_frame_equal(
             dynamic_features.iloc[10:20],

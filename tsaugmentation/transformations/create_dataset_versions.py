@@ -39,17 +39,24 @@ class CreateTransformedVersions:
         self.transf_data = transf_data
         if transf_data == "train":
             self.y = self.data["train"]["data"]
-            self.n = self.data["train"]["n"]  # number of points in each series for the training dataset
+            self.n = self.data["train"][
+                "n"
+            ]  # number of points in each series for the training dataset
         else:
             self.y = self.data["predict"]["data_matrix"]
-            self.n = self.data["predict"]["n"]  # number of points in each series for the whole dataset
+            self.n = self.data["predict"][
+                "n"
+            ]  # number of points in each series for the whole dataset
 
         self.groups_idx = self.data["train"]["groups_idx"]
         self._create_directories()
         self._save_original_file()
         self.n_versions = 6
         self.visualizer = Visualizer(
-            dataset=self.dataset_name, n_versions=self.n_versions, n_series=6, transf_data=self.transf_data
+            dataset=self.dataset_name,
+            n_versions=self.n_versions,
+            n_series=6,
+            transf_data=self.transf_data,
         )
         self.y_new_all = np.zeros(
             (len(self.transformations), self.n_versions, self.n_samples, self.n, self.s)
@@ -58,6 +65,9 @@ class CreateTransformedVersions:
             np.array(self.transformations).reshape(-1, 1),
             (self.n_versions, self.n_samples, 1, self.s),
         ).transpose(2, 0, 1, 3)
+
+        self.y_loaded_original = None
+        self.y_loaded_transformed = None
 
     def _create_directories(self):
         # Create directory to store transformed datasets if does not exist
@@ -112,6 +122,23 @@ class CreateTransformedVersions:
                         y_new[k, i - 1], i, j, self.transformations[k], method
                     )
         return y_new
+
+    def read_groups_transformed(self, method):
+        with open(
+            f"{self.input_dir}data/transformed_datasets/{self.dataset_name}_original.npy",
+            "rb",
+        ) as f:
+            self.y_loaded_original = np.load(f)
+
+        y_new = []
+        for version in range(1, self.n_versions + 1):
+            with open(
+                f"{self.input_dir}data/transformed_datasets/{self.dataset_name}_version_{version}_10samples_single_transf_{method}_{self.transf_data}.npy",
+                "rb",
+            ) as f_new:
+                y_ver = np.load(f_new)
+                y_new.append(y_ver)
+        self.y_loaded_transformed = np.array(y_new)
 
     def create_new_version_single_transf(self):
         self.y_new_all = self._create_new_version(method="single_transf")

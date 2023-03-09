@@ -34,6 +34,8 @@ class PreprocessDatasets:
         self.top = top
         self.test_size = test_size
         self.sample_perc = sample_perc
+        if self.sample_perc is not None and self.sample_perc > 1:
+            raise ValueError("sample_perc must be between 0 and 1")
         self._create_directories()
 
     def _create_directories(self):

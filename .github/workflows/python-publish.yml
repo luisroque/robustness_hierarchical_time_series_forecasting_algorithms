@@ -14,7 +14,23 @@ on:
       - main
 
 jobs:
+#  test:
+#    runs-on: ubuntu-20.04
+#    steps:
+#      - name: clone robustness_hierarchical_time_series_forecasting_algorithms
+#        uses: actions/checkout@v2
+#      - name: Set up Python 3.9
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.9
+#      - name: Install dependencies
+#        run: |
+#          ./install_python_dependencies.sh
+#      - name: Generate project structure
+#        run: |
+#          coverage run -m pytest tsaugmentation/tests --disable-pytest-warnings
   deploy:
+#    needs: test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

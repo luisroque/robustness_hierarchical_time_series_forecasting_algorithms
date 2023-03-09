@@ -23,7 +23,6 @@ from tensorflow import keras
 
 
 class TestModel(unittest.TestCase):
-
     def setUp(self) -> None:
         self.window_size = 10
         latent_dim = 2
@@ -50,7 +49,7 @@ class TestModel(unittest.TestCase):
         )
 
         static_features_scaled = scale_static_features(static_features)
-        dynamic_features = create_dynamic_features(df)
+        dynamic_features = create_dynamic_features(df, "MS")
         X_train, y_train = temporalize(X_train_raw_scaled, self.window_size)
 
         n_features_concat = X_train.shape[1] + dynamic_features.shape[1]
@@ -65,6 +64,9 @@ class TestModel(unittest.TestCase):
             static_features_scaled,
             self.window_size,
         )
+        static_features_inp_window = [
+            np.squeeze(arr[-218:]) for arr in self.static_features_inp
+        ]
 
         encoder, decoder = get_mv_model(
             mv_normal_dim=self.n_features,
@@ -79,17 +81,17 @@ class TestModel(unittest.TestCase):
         self.vae_full_mv.compile(optimizer=keras.optimizers.Adam())
 
         self.vae_full_mv.fit(
-            x=(self.dynamic_features_inp, X_inp, self.static_features_inp),
+            x=(self.dynamic_features_inp, X_inp, static_features_inp_window),
             epochs=5,
             batch_size=5,
             shuffle=False,
         )
 
         _, _, self.z = self.vae_full_mv.encoder.predict(
-            self.dynamic_features_inp + [X_inp] + self.static_features_inp
+            self.dynamic_features_inp + [X_inp] + static_features_inp_window
         )
         preds = self.vae_full_mv.decoder.predict(
-            [self.z] + self.dynamic_features_inp + self.static_features_inp
+            [self.z] + self.dynamic_features_inp + static_features_inp_window
         )
         preds = detemporalize(preds)
         self.X_hat = self.scaler_target.inverse_transform(preds)
@@ -108,7 +110,12 @@ class TestModel(unittest.TestCase):
             self.n_train,
         )
 
-        plot_generated_vs_original(dec_pred_hat, self.X_train_raw, 10)
+        plot_generated_vs_original(
+            dec_pred_hat=dec_pred_hat,
+            X_train_raw=self.X_train_raw[10:],
+            param_vae=10,
+            dataset_name="tourism",
+        )
 
         self.assertTrue(dec_pred_hat.shape == (218, 304))
 
