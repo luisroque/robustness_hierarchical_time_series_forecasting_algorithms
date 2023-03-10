@@ -10,11 +10,12 @@ class CreateGroups:
         """Creates a new instance of CreateGroups."""
         self.dataset_name = dataset_name
         self.sample_perc = sample_perc
+        self.sample_int_perc = int(sample_perc * 100) if sample_perc is not None else None
 
     def create_subsampled_groups(self) -> dict:
         """Creates subsampled groups from the dataset and stores them in a pickle file."""
         groups = self._preprocess_dataset(self.sample_perc)
-        file_path = f"./data/subsampled_datasets/{self.dataset_name}_{self.sample_perc}.pkl"
+        file_path = f"./data/subsampled_datasets/{self.dataset_name}_{self.sample_int_perc}.pkl"
         self._store_groups(groups, file_path)
         return groups
 
@@ -27,7 +28,7 @@ class CreateGroups:
 
     def read_subsampled_groups(self) -> dict:
         """Loads subsampled groups from a pickle file."""
-        file_path = f"./data/subsampled_datasets/{self.dataset_name}_{self.sample_perc}.pkl"
+        file_path = f"./data/subsampled_datasets/{self.dataset_name}_{self.sample_int_perc}.pkl"
         return self._read_groups(file_path)
 
     def read_original_groups(self) -> dict:
