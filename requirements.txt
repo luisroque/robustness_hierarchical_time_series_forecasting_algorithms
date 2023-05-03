@@ -8,3 +8,5 @@ tensorflow~=2.10.0
 scikit-learn~=1.0.2
 dtaidistance~=2.3.9
 joypy==0.2.6
+scikit-optimize==0.9.0
+

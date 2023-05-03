@@ -13,7 +13,7 @@ class TestModel(unittest.TestCase):
             dataset_name="police", freq="D", top=10
         )
 
-        self.model, _ = self.create_dataset_vae.fit(epochs=5)
+        self.model, _, _ = self.create_dataset_vae.fit(epochs=5)
         self.preds, self.z = self.create_dataset_vae.predict(self.model)
 
     def test_compute_similarity(self):

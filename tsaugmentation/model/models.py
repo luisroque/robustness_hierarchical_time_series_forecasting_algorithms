@@ -76,16 +76,19 @@ class VAE(keras.Model):
         inp_data = list(inp_data)
         static_features = list(static_features)
 
-        with tf.GradientTape() as tape:
-            z_mean, z_log_var, z = self.encoder(
-                dynamic_features + inp_data + static_features
-            )
-            pred = self.decoder([z] + dynamic_features + static_features)
+        device = "/gpu:0" if tf.config.list_physical_devices("GPU") else "/cpu:0"
 
-            reconstruction_loss = K.mean(K.square(inp_data - pred)) * self.window_size
-            kl_loss = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
-            kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
-            total_loss = reconstruction_loss + kl_loss
+        with tf.device(device):
+            with tf.GradientTape() as tape:
+                z_mean, z_log_var, z = self.encoder(
+                    dynamic_features + inp_data + static_features
+                )
+                pred = self.decoder([z] + dynamic_features + static_features)
+
+                reconstruction_loss = K.mean(K.square(inp_data - pred)) * self.window_size
+                kl_loss = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
+                kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
+                total_loss = reconstruction_loss + kl_loss
 
         grads = tape.gradient(total_loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
@@ -100,6 +103,45 @@ class VAE(keras.Model):
         }
 
 
+def get_flatten_size_encoder(
+    static_features: dict,
+    dynamic_features_df: pd.DataFrame,
+    window_size: int,
+    n_features: int,
+    n_features_concat: int,
+) -> int:
+    inp = Input(shape=(window_size, n_features))
+
+    dynamic_features_inp = []
+    for feature in range(len(dynamic_features_df.columns)):
+        inp_dyn_feat = Input(shape=(window_size, 1))
+        dynamic_features_inp.append(inp_dyn_feat)
+
+    static_feat_inp = []
+    for feature, arr in static_features.items():
+        inp_static_feat = Input(shape=(n_features, 1))
+        static_feat_inp.append(inp_static_feat)
+
+    enc = Concatenate()(dynamic_features_inp + [inp])
+    enc = Bidirectional(
+        LSTM(
+            n_features,
+            kernel_initializer="random_uniform",
+            input_shape=(window_size, n_features_concat),
+        ),
+        merge_mode="ave",
+    )(enc)
+
+    enc = Reshape((-1, 1))(enc)
+    enc = Concatenate()([enc] + static_feat_inp)
+    enc = Flatten()(enc)
+
+    # Create a temporary model to compute the flatten size
+    temp_model = Model(dynamic_features_inp + [inp] + static_feat_inp, enc)
+    flatten_size = temp_model.output_shape[1]
+    return flatten_size
+
+
 def get_mv_model(
     mv_normal_dim: int,
     static_features: dict,
@@ -107,7 +149,8 @@ def get_mv_model(
     window_size: int,
     n_features: int,
     n_features_concat: int,
-    latent_dim: int
+    latent_dim: int,
+    s: int
 ) -> tuple[keras.Model, keras.Model]:
     """
     Creating the encoder and decoder models using dynamic and static features
@@ -155,7 +198,7 @@ def get_mv_model(
     enc = Concatenate()([enc] + static_feat_inp)
     enc = Flatten()(enc)
     enc = Reshape((mv_normal_dim, -1))(enc)
-    z = Dense(32, activation="relu")(enc)
+    z = Dense(s, activation="relu")(enc)
 
     z_mean = Dense(latent_dim)(z)
     z_log_var = Dense(latent_dim)(z)
