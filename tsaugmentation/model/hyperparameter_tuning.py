@@ -51,7 +51,7 @@ def setup_hyperparameter_opt(dataset_name, freq):
         #    model, z, 0
         #)
 
-        return -es.best
+        return es.best
 
     return train_evaluate_vae
 
