@@ -17,7 +17,6 @@ def compute_similarity_transformed_vs_original(
     :return: mean of the distance - transformed dataset
     :return: mean of the distance - original dataset
     """
-    # Scaling the data
     scaler = StandardScaler()
     scaler.fit(orig)
     orig_scaled = scaler.transform(orig)
@@ -28,7 +27,6 @@ def compute_similarity_transformed_vs_original(
 
     dec_pred_hat = dec_pred_hat.astype("float64")
 
-    # Scaling the data
     scaler = StandardScaler()
     scaler.fit(dec_pred_hat)
     dec_pred_hat_scaled = scaler.transform(dec_pred_hat)

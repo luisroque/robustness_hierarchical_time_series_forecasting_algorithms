@@ -10,7 +10,7 @@ from tsaugmentation.feature_engineering.feature_transformations import (
 )
 from tsaugmentation.postprocessing.generative_helper import generate_new_time_series
 from sklearn.preprocessing import MinMaxScaler
-from tsaugmentation.model.models import VAE, get_mv_model
+from tsaugmentation.model.models import VAE, get_mv_model, get_flatten_size_encoder
 from ..preprocessing.pre_processing_datasets import PreprocessDatasets as ppc
 from pathlib import Path
 import numpy as np
@@ -18,6 +18,10 @@ import pandas as pd
 from tensorflow import keras
 from keras.callbacks import EarlyStopping
 from tsaugmentation.visualization.model_visualization import plot_generated_vs_original
+
+
+class InvalidFrequencyError(Exception):
+    pass
 
 
 class CreateTransformedVersionsVAE:
@@ -33,13 +37,20 @@ class CreateTransformedVersionsVAE:
     top: number of series to consider from the dataset
     """
 
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(
         self,
         dataset_name: str,
         freq: str,
         input_dir: str = "./",
         transf_data: str = "whole",
-        top: int = None
+        top: int = None,
     ):
         self.dataset_name = dataset_name
         self.input_dir = input_dir
@@ -62,18 +73,33 @@ class CreateTransformedVersionsVAE:
         )[: self.n]
         self.df = self.df.set_index("Date")
         self.df.asfreq(self.freq)
+        self.preprocess_freq()
+
+        self.features_input = (None, None, None)
+        self._create_directories()
+        self._save_original_file()
+
+    def preprocess_freq(self):
+        end_date = None
 
         # Create dataset with window_size more dates in the future to be used
-        if self.freq == 'Q':
-            self.freq += 'S'
-            end_date = self.df.index[-1] + pd.DateOffset(months=10*3)
-        elif self.freq == 'M':
-            self.freq += 'S'
-            end_date = self.df.index[-1] + pd.DateOffset(months=10)
-        elif self.freq == 'W':
-            end_date = self.df.index[-1] + pd.DateOffset(weeks=10)
-        elif self.freq == 'D':
-            end_date = self.df.index[-1] + pd.DateOffset(days=10)
+        if self.freq in ["Q", "QS"]:
+            if self.freq == "Q":
+                self.freq += "S"
+            end_date = self.df.index[-1] + pd.DateOffset(months=self.window_size * 3)
+        elif self.freq in ["M", "MS"]:
+            if self.freq == "M":
+                self.freq += "S"
+            end_date = self.df.index[-1] + pd.DateOffset(months=self.window_size)
+        elif self.freq == "W":
+            end_date = self.df.index[-1] + pd.DateOffset(weeks=self.window_size)
+        elif self.freq == "D":
+            end_date = self.df.index[-1] + pd.DateOffset(days=self.window_size)
+        else:
+            raise InvalidFrequencyError(
+                f"Invalid frequency - {self.freq}. Please use one of the defined frequencies: Q, QS, M, MS, W, or D."
+            )
+
         ix = pd.date_range(
             start=self.df.index[0],
             end=end_date,
@@ -81,10 +107,6 @@ class CreateTransformedVersionsVAE:
         )
         self.df_generate = self.df.copy()
         self.df_generate = self.df_generate.reindex(ix)
-
-        self.features_input = (None, None, None)
-        self._create_directories()
-        self._save_original_file()
 
     def _get_dataset(self):
         """
@@ -189,13 +211,26 @@ class CreateTransformedVersionsVAE:
 
         return self.dynamic_features_inp, X_inp, self.static_features_inp
 
+    def get_flatten_size_encoder(self):
+        _ = self._feature_engineering(self.n_train)
+        flatten_size = get_flatten_size_encoder(
+            static_features=self.static_features_scaled,
+            dynamic_features_df=self.dynamic_features,
+            window_size=self.window_size,
+            n_features=self.n_features,
+            n_features_concat=self.n_features_concat,
+        )
+
+        return flatten_size
+
     def fit(
         self,
         epochs: int = 750,
         batch_size: int = 5,
         patience: int = 30,
         mv_normal_dim: int = None,
-    ) -> tuple[VAE, dict]:
+        learning_rate: float = 0.001,
+    ) -> tuple[VAE, dict, EarlyStopping]:
         """
         Training our VAE on the dataset supplied
 
@@ -219,10 +254,11 @@ class CreateTransformedVersionsVAE:
             n_features=self.n_features,
             n_features_concat=self.n_features_concat,
             latent_dim=self.latent_dim,
+            s=self.s,
         )
 
         vae = VAE(encoder, decoder, self.window_size)
-        vae.compile(optimizer=keras.optimizers.Adam())
+        vae.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate))
         es = EarlyStopping(
             patience=patience,
             verbose=1,
@@ -239,7 +275,7 @@ class CreateTransformedVersionsVAE:
             callbacks=[es],
         )
 
-        return vae, history
+        return vae, history, es
 
     def predict(
         self, vae: VAE, similar_static_features: bool = True
@@ -276,7 +312,9 @@ class CreateTransformedVersionsVAE:
         X_hat = self.scaler_target.inverse_transform(preds)
 
         # To train the VAE the first points (equal to the window size) of the dataset were not predicted
-        X_hat_complete = np.concatenate((self.X_train_raw[:10], X_hat), axis=0)
+        X_hat_complete = np.concatenate(
+            (self.X_train_raw[: self.window_size], X_hat), axis=0
+        )
 
         return X_hat_complete, z
 
