@@ -1,5 +1,5 @@
 import unittest
-from tsaugmentation.transformations.create_dataset_versions_vae import (
+from tsaugmentation.model.create_dataset_versions_vae import (
     CreateTransformedVersionsVAE,
 )
 from tsaugmentation.transformations.compute_similarities_summary_metrics import (

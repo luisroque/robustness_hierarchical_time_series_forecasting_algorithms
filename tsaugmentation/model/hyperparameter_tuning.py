@@ -2,7 +2,7 @@ import math
 import os
 from skopt import gp_minimize
 from skopt.space import Real, Integer
-from tsaugmentation.transformations.create_dataset_versions_vae import (
+from tsaugmentation.model.create_dataset_versions_vae import (
     CreateTransformedVersionsVAE,
 )
 from tsaugmentation.utils.logger import Logger
