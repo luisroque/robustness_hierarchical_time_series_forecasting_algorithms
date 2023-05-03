@@ -30,7 +30,7 @@ def setup_hyperparameter_opt(dataset_name, freq):
             # mv_normal_dim,
         ) = params
 
-        vae_model.window_size = window_size
+        vae_model.window_size = int(window_size)
         vae_model.n_train = vae_model.n - vae_model.window_size
         vae_model.preprocess_freq()
 
