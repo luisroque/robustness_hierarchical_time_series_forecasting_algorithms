@@ -21,7 +21,7 @@ def temporalize(data: np.ndarray, window_size: int) -> np.ndarray:
     return np.array(X)
 
 
-def detemporalize(data: np.ndarray) -> np.ndarray:
+def detemporalize(data: np.ndarray, window_size: int) -> np.ndarray:
     """
     Transform the data back to the original shape
 
@@ -30,7 +30,19 @@ def detemporalize(data: np.ndarray) -> np.ndarray:
 
     :return: data in the original shape
     """
-    return np.array([x[0] for x in data])
+    num_sequences, seq_len, num_features = data.shape
+    num_data_points = num_sequences + window_size - 1
+
+    output = np.zeros((num_data_points, num_features))
+
+    # Copy the first window directly
+    output[:window_size] = data[0]
+
+    # Copy the last time step from the remaining windows
+    for i in range(1, num_sequences):
+        output[window_size + i - 1] = data[i, -1]
+
+    return output
 
 
 def combine_inputs_to_model(

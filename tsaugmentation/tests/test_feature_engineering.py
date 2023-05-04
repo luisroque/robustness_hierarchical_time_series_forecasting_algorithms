@@ -233,7 +233,7 @@ class TestModel(unittest.TestCase):
 
     def test_feature_transformations_detemporalize(self):
         X_train, y_train = temporalize(self.X_train_raw_scaled, self.window_size)
-        X_train_orig = detemporalize(X_train)
+        X_train_orig = detemporalize(X_train, self.window_size)
 
         self.assertTrue(X_train_orig.shape == (218, 304))
 

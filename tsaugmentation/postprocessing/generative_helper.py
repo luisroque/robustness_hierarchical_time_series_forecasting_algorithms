@@ -39,7 +39,7 @@ def generate_new_time_series(
 
     dec_pred = []
 
-    for id_seq in range(n):
+    for id_seq in range(n - window_size + 1):
         d_feat = [dy[id_seq, :].reshape(1, window_size) for dy in dynamic_features_inp]
         s_feat = [st[id_seq, :].reshape(1, n_features, 1) for st in static_features_inp]
         dec_pred.append(
@@ -50,7 +50,7 @@ def generate_new_time_series(
             )
         )
 
-    dec_pred_hat = detemporalize(np.squeeze(np.array(dec_pred)))
+    dec_pred_hat = detemporalize(np.squeeze(np.array(dec_pred)), window_size)
     dec_pred_hat = scaler_target.inverse_transform(dec_pred_hat)
 
     return dec_pred_hat

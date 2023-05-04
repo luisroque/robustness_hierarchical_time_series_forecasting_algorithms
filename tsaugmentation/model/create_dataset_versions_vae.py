@@ -340,7 +340,7 @@ class CreateTransformedVersionsVAE:
             _, _, z = vae.encoder.predict(dynamic_feat + X_inp + static_feat)
 
         preds = vae.decoder.predict([z] + dynamic_feat + static_feat)
-        preds = detemporalize(preds)
+        preds = detemporalize(preds, self.window_size)
         X_hat = self.scaler_target.inverse_transform(preds)
 
         # To train the VAE the first points (equal to the window size) of the dataset were not predicted
