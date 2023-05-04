@@ -239,6 +239,7 @@ class CreateTransformedVersionsVAE:
         patience: int = 30,
         mv_normal_dim: int = None,
         learning_rate: float = 0.001,
+        hyper_tuning: bool = False,
     ) -> tuple[VAE, dict, EarlyStopping]:
         """
         Training our VAE on the dataset supplied
@@ -285,7 +286,7 @@ class CreateTransformedVersionsVAE:
         )
         history = None
 
-        if os.path.exists(weights_file):
+        if os.path.exists(weights_file) and not hyper_tuning:
             _ = vae(self.features_input)
             print("Loading existing weights...")
             vae.load_weights(weights_file)

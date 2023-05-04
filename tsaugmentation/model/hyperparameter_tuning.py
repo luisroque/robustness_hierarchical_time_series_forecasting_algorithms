@@ -43,6 +43,7 @@ def setup_hyperparameter_opt(dataset_name, freq):
             patience=patience,
             batch_size=batch_size,
             learning_rate=learning_rate,
+            hyper_tuning=True
         )
 
         # preds, z = vae_model.predict(vae=model)
