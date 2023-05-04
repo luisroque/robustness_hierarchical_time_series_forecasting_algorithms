@@ -49,6 +49,15 @@ class VAE(keras.Model):
         )
         self.kl_loss_tracker = keras.metrics.Mean(name="kl_loss")
 
+    def call(self, inputs, training=None, mask=None):
+        dynamic_features, inp_data, static_features = inputs
+
+        z_mean, z_log_var, z = self.encoder(
+            dynamic_features + inp_data + static_features
+        )
+        pred = self.decoder([z] + dynamic_features + static_features)
+        return pred
+
     @property
     def metrics(self) -> list:
         """
