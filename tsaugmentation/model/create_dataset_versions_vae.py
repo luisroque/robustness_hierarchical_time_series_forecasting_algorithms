@@ -58,6 +58,7 @@ class CreateTransformedVersionsVAE:
         input_dir: str = "./",
         transf_data: str = "whole",
         top: int = None,
+            window_size=10
     ):
         self.dataset_name = dataset_name
         self.input_dir = input_dir
@@ -65,7 +66,8 @@ class CreateTransformedVersionsVAE:
         self.freq = freq
         self.top = top
         self.dataset = self._get_dataset()
-        self.window_size = 10
+        if window_size:
+            self.window_size = window_size
         self.latent_dim = 2
         data = self.dataset["predict"]["data_matrix"]
         self.y = data
