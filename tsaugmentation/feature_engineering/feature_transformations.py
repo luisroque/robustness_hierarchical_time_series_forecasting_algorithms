@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 
 
-def temporalize(data: np.ndarray, window_size: int) -> tuple[np.ndarray, np.ndarray]:
+def temporalize(data: np.ndarray, window_size: int) -> np.ndarray:
     """
     Transforming the data to the following shape using a rolling window:
-    from (n, s) to (n-window_size, window_size, s)
+    from (n, s) to (n-window_size+1, window_size, s)
 
     :param data: input data to transform
     :param window_size: input window to consider on the transformation
@@ -15,13 +15,10 @@ def temporalize(data: np.ndarray, window_size: int) -> tuple[np.ndarray, np.ndar
     """
 
     X = []
-    y = []
-    for i in range(len(data) - window_size):
+    for i in range(len(data) - window_size + 1):
         row = [r for r in data[i : i + window_size]]
         X.append(row)
-        label = data[i + window_size]
-        y.append(label)
-    return np.array(X), np.array(y)
+    return np.array(X)
 
 
 def detemporalize(data: np.ndarray) -> np.ndarray:
@@ -56,7 +53,7 @@ def combine_inputs_to_model(
 
     """
 
-    X_dyn, y_dyn = temporalize(dynamic_features.to_numpy(), window_size)
+    X_dyn = temporalize(dynamic_features.to_numpy(), window_size)
 
     dynamic_features_inp, X_inp, static_features_inp = (
         [X_dyn[:, :, i] for i in range(len(dynamic_features.columns))],

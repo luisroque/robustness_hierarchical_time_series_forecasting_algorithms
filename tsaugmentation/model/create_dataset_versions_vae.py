@@ -58,7 +58,7 @@ class CreateTransformedVersionsVAE:
         input_dir: str = "./",
         transf_data: str = "whole",
         top: int = None,
-            window_size=10
+        window_size: int = 10,
     ):
         self.dataset_name = dataset_name
         self.input_dir = input_dir
@@ -74,7 +74,7 @@ class CreateTransformedVersionsVAE:
         self.n = data.shape[0]
         self.s = data.shape[1]
         self.n_features = self.s
-        self.n_train = self.n - self.window_size
+        self.n_train = self.n - self.window_size + 1
         self.groups = list(self.dataset["train"]["groups_names"].keys())
         self.df = pd.DataFrame(data)
         self.df = pd.concat(
@@ -203,7 +203,7 @@ class CreateTransformedVersionsVAE:
         else:
             self.dynamic_features = create_dynamic_features(self.df, self.freq)
 
-        X_train, y_train = temporalize(X_train_raw_scaled, self.window_size)
+        X_train = temporalize(X_train_raw_scaled, self.window_size)
 
         self.n_features_concat = X_train.shape[1] + self.dynamic_features.shape[1]
 

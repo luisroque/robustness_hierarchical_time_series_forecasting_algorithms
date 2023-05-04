@@ -31,7 +31,7 @@ def setup_hyperparameter_opt(dataset_name, freq):
         ) = params
 
         vae_model.window_size = int(window_size)
-        vae_model.n_train = vae_model.n - vae_model.window_size
+        vae_model.n_train = vae_model.n - vae_model.window_size + 1
         vae_model.preprocess_freq()
 
         # flatten_size = vae_model.get_flatten_size_encoder()
