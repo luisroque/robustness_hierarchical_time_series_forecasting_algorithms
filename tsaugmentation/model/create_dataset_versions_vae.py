@@ -1,3 +1,14 @@
+import os
+import numpy as np
+import pandas as pd
+from pathlib import Path
+
+from sklearn.preprocessing import MinMaxScaler
+
+from tensorflow import keras
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+
+from tsaugmentation.model.models import VAE, get_mv_model, get_flatten_size_encoder
 from tsaugmentation.feature_engineering.static_features import (
     create_static_features,
     scale_static_features,
@@ -9,15 +20,9 @@ from tsaugmentation.feature_engineering.feature_transformations import (
     detemporalize,
 )
 from tsaugmentation.postprocessing.generative_helper import generate_new_time_series
-from sklearn.preprocessing import MinMaxScaler
-from tsaugmentation.model.models import VAE, get_mv_model, get_flatten_size_encoder
-from ..preprocessing.pre_processing_datasets import PreprocessDatasets as ppc
-from pathlib import Path
-import numpy as np
-import pandas as pd
-from tensorflow import keras
-from keras.callbacks import EarlyStopping
 from tsaugmentation.visualization.model_visualization import plot_generated_vs_original
+
+from tsaugmentation.preprocessing.pre_processing_datasets import PreprocessDatasets as ppc
 
 
 class InvalidFrequencyError(Exception):
@@ -259,6 +264,17 @@ class CreateTransformedVersionsVAE:
 
         vae = VAE(encoder, decoder, self.window_size)
         vae.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate))
+
+        weights_dir = 'model_weights'
+        if not os.path.exists(weights_dir):
+            os.makedirs(weights_dir)
+
+        weights_file = os.path.join(weights_dir, 'best_weights.h5')
+        if os.path.isfile(weights_file):
+            print("Loading existing weights...")
+            vae.load_weights(weights_file)
+            return vae, None, None
+
         es = EarlyStopping(
             patience=patience,
             verbose=1,
@@ -267,12 +283,14 @@ class CreateTransformedVersionsVAE:
             restore_best_weights=True,
         )
 
+        mc = ModelCheckpoint(weights_file, save_best_only=True, monitor='loss', mode='auto', verbose=1)
+
         history = vae.fit(
             x=self.features_input,
             epochs=epochs,
             batch_size=batch_size,
             shuffle=False,
-            callbacks=[es],
+            callbacks=[es, mc],
         )
 
         return vae, history, es
