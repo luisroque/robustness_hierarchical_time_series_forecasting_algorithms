@@ -83,7 +83,7 @@ def optimize_hyperparameters(dataset_name, freq, n_calls):
     logger.info(f"Best parameters: {best_params}")
     logger.info(f"Best loss: {best_loss}")
 
-    with open(os.path.join(output_dir, "best_params_and_loss.txt"), "w") as f:
+    with open(os.path.join(output_dir, f"best_params_and_loss_{dataset_name}.txt"), "w") as f:
         f.write(f"Best parameters: {best_params}\n")
         f.write(f"Best loss: {best_loss}")
 
