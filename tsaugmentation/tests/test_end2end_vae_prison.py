@@ -15,6 +15,7 @@ class TestModel(unittest.TestCase):
 
         self.model, _, _ = self.create_dataset_vae.fit(epochs=5)
         self.preds, self.z = self.create_dataset_vae.predict(self.model)
+        pass
 
     def test_compute_similarity(self):
         dec_pred_hat = self.create_dataset_vae.generate_transformed_time_series(

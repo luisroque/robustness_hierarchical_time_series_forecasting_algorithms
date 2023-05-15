@@ -237,7 +237,7 @@ class CreateTransformedVersionsVAE:
         epochs: int = 750,
         batch_size: int = 5,
         patience: int = 30,
-        mv_normal_dim: int = None,
+        mv_normal_dim: int = 3,
         learning_rate: float = 0.001,
         hyper_tuning: bool = False,
     ) -> tuple[VAE, dict, EarlyStopping]:
@@ -252,8 +252,6 @@ class CreateTransformedVersionsVAE:
 
         :return: model trained
         """
-        if not mv_normal_dim:
-            mv_normal_dim = self.n_features
         self.features_input = self._feature_engineering(self.n_train)
 
         encoder, decoder = get_mv_model(
@@ -264,7 +262,6 @@ class CreateTransformedVersionsVAE:
             n_features=self.n_features,
             n_features_concat=self.n_features_concat,
             latent_dim=self.latent_dim,
-            s=self.s,
         )
 
         vae = VAE(encoder, decoder, self.window_size)

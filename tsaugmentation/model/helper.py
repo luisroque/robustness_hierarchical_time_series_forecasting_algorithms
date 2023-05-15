@@ -5,7 +5,7 @@ from tensorflow.python.ops import array_ops
 
 
 class Sampling(Layer):
-    """Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
+    """Uses (z_mean, z_log_var) to sample z, the vector encoding."""
 
     def call(self, inputs):
         z_mean, z_log_var = inputs
