@@ -68,7 +68,6 @@ class CreateTransformedVersionsVAE:
         self.dataset = self._get_dataset()
         if window_size:
             self.window_size = window_size
-        self.latent_dim = 2
         data = self.dataset["predict"]["data_matrix"]
         self.y = data
         self.n = data.shape[0]
@@ -237,6 +236,7 @@ class CreateTransformedVersionsVAE:
         epochs: int = 750,
         batch_size: int = 5,
         patience: int = 30,
+        latent_dim: int = 2,
         learning_rate: float = 0.001,
         hyper_tuning: bool = False,
     ) -> tuple[VAE, dict, EarlyStopping]:
@@ -246,7 +246,7 @@ class CreateTransformedVersionsVAE:
         :param epochs: number of epochs to train the model
         :param batch_size: batch size to train the model
         :param patience: parameter for early stopping
-        :param mv_normal_dim: dimensionality of the normal dist
+        :param latent_dim: dimensionality of the normal dist
                 -> if = 1 univariate; if = n_features full multivariate
 
         :return: model trained
@@ -259,7 +259,7 @@ class CreateTransformedVersionsVAE:
             window_size=self.window_size,
             n_features=self.n_features,
             n_features_concat=self.n_features_concat,
-            latent_dim=self.latent_dim,
+            latent_dim=latent_dim,
         )
 
         vae = VAE(encoder, decoder, self.window_size)
