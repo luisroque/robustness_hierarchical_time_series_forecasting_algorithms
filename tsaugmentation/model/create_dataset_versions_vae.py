@@ -237,7 +237,6 @@ class CreateTransformedVersionsVAE:
         epochs: int = 750,
         batch_size: int = 5,
         patience: int = 30,
-        mv_normal_dim: int = 3,
         learning_rate: float = 0.001,
         hyper_tuning: bool = False,
     ) -> tuple[VAE, dict, EarlyStopping]:
@@ -255,7 +254,6 @@ class CreateTransformedVersionsVAE:
         self.features_input = self._feature_engineering(self.n_train)
 
         encoder, decoder = get_mv_model(
-            mv_normal_dim=mv_normal_dim,
             static_features=self.static_features_scaled,
             dynamic_features_df=self.dynamic_features,
             window_size=self.window_size,
@@ -308,8 +306,8 @@ class CreateTransformedVersionsVAE:
         return vae, history, es
 
     def predict(
-        self, vae: VAE, similar_static_features: bool = True
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, vae: VAE, similar_static_features: bool = False
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Predict original time series using VAE, note that by default we will use the middle value
          (0.5 since we have a MinMax scaling) for the static features so that we are sampling using
          the most similar structure possible and so reduce the distance between the series
@@ -333,9 +331,13 @@ class CreateTransformedVersionsVAE:
                     0.5 * np.ones((self.n_train, self.n_features, 1))
                 )
 
-            _, _, z = vae.encoder.predict(dynamic_feat + X_inp + sim_static_features)
+            z_mean, z_log_var, z = vae.encoder.predict(
+                dynamic_feat + X_inp + sim_static_features
+            )
         else:
-            _, _, z = vae.encoder.predict(dynamic_feat + X_inp + static_feat)
+            z_mean, z_log_var, z = vae.encoder.predict(
+                dynamic_feat + X_inp + static_feat
+            )
 
         preds = vae.decoder.predict([z] + dynamic_feat + static_feat)
         preds = detemporalize(preds, self.window_size)
@@ -346,13 +348,14 @@ class CreateTransformedVersionsVAE:
             (self.X_train_raw[: self.window_size], X_hat), axis=0
         )
 
-        return X_hat_complete, z
+        return X_hat_complete, z, z_mean, z_log_var
 
     def generate_transformed_time_series(
         self,
         vae: VAE,
-        z: np.ndarray,
-        std_latent_space: float,
+        z_mean: np.ndarray,
+        z_log_var: np.ndarray,
+        std_latent_space: float = None,
         plot_predictions: bool = True,
         n_series_plot: int = 8,
     ) -> np.ndarray:
@@ -375,15 +378,16 @@ class CreateTransformedVersionsVAE:
         dynamic_feat, X_inp, static_feat = self.features_input
 
         dec_pred_hat = generate_new_time_series(
-            vae,
-            [std_latent_space, std_latent_space],
-            z,
-            self.window_size,
-            dynamic_feat,
-            static_feat,
-            self.scaler_target,
-            self.n_features,
-            self.n,
+            vae=vae,
+            z_mean=z_mean,
+            z_log_var=z_log_var,
+            window_size=self.window_size,
+            dynamic_features_inp=dynamic_feat,
+            static_features_inp=static_feat,
+            scaler_target=self.scaler_target,
+            n_features=self.n_features,
+            n=self.n,
+            init_samples_std=std_latent_space,
         )
 
         if plot_predictions:
@@ -399,7 +403,8 @@ class CreateTransformedVersionsVAE:
     def generate_new_datasets(
         self,
         vae: VAE,
-        z: np.ndarray,
+        z_mean: np.ndarray,
+        z_log_var: np.ndarray,
         std_latent_space: list[float],
         n_versions: int = 6,
         n_samples: int = 10,
@@ -421,7 +426,10 @@ class CreateTransformedVersionsVAE:
         for v in range(1, n_versions + 1):
             for s in range(1, n_samples + 1):
                 y_new[v - 1, s - 1] = self.generate_transformed_time_series(
-                    vae, z, std_latent_space[v - 1]
+                    vae=vae,
+                    z_mean=z_mean,
+                    z_log_var=z_log_var,
+                    std_latent_space=std_latent_space[v - 1],
                 )
             if save:
                 self._save_version_file(y_new[v - 1], v, s, "vae")

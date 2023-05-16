@@ -11,7 +11,7 @@ from keras.layers import (
     Dense,
     TimeDistributed,
 )
-from keras.layers import Dropout
+from keras.layers import Dropout, RepeatVector
 from keras import backend as K
 from .helper import RepeatVector3D, Sampling
 from keras.models import Model
@@ -153,7 +153,6 @@ def get_flatten_size_encoder(
 
 
 def get_mv_model(
-    mv_normal_dim: int,
     static_features: dict,
     dynamic_features_df: pd.DataFrame,
     window_size: int,
@@ -203,14 +202,14 @@ def get_mv_model(
         merge_mode="ave",
     )(enc)
 
+    enc = Dropout(0.5)(enc)
     enc = Reshape((-1, 1))(enc)
     enc = Concatenate()([enc] + static_feat_inp)
     enc = Flatten()(enc)
-    enc = Dense(mv_normal_dim, activation="relu")(enc)
-    z = Reshape((mv_normal_dim, -1))(enc)
+    enc = Dense(latent_dim, activation="relu")(enc)
 
-    z_mean = Dense(latent_dim)(z)
-    z_log_var = Dense(latent_dim)(z)
+    z_mean = Dense(latent_dim)(enc)
+    z_log_var = Dense(latent_dim)(enc)
 
     z = Sampling()([z_mean, z_log_var])
 
@@ -218,9 +217,9 @@ def get_mv_model(
 
     # decoder
 
-    inp_z = Input(shape=(mv_normal_dim, latent_dim))
+    inp_z = Input(shape=(latent_dim, ))
 
-    dec = RepeatVector3D(window_size)(inp_z)
+    dec = RepeatVector(window_size)(inp_z)
     dec = Reshape((window_size, -1))(dec)
     dec = Concatenate()([dec] + dynamic_features_inp)
 
@@ -233,8 +232,6 @@ def get_mv_model(
         ),
         merge_mode="ave",
     )(dec)
-
-    enc = Dropout(0.5)(enc)
 
     dec = TimeDistributed(Dense(n_features))(dec)
     dec = K.permute_dimensions(dec, (0, 2, 1))

@@ -14,11 +14,20 @@ class TestModel(unittest.TestCase):
         )
 
         self.model, _, _ = self.create_dataset_vae.fit(epochs=5)
-        self.preds, self.z = self.create_dataset_vae.predict(self.model)
+        self.model, _, _ = self.create_dataset_vae.fit(epochs=5)
+        (
+            self.preds,
+            self.z,
+            self.z_mean,
+            self.z_log_var,
+        ) = self.create_dataset_vae.predict(self.model)
 
     def test_compute_similarity(self):
         dec_pred_hat = self.create_dataset_vae.generate_transformed_time_series(
-            self.model, self.z, 0.5
+            vae=self.model,
+            z_mean=self.z_mean,
+            z_log_var=self.z_log_var,
+            std_latent_space=0.5,
         )
 
         self.assertTrue(

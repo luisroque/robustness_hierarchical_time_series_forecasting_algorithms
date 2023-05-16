@@ -4,7 +4,7 @@ scipy~=1.8.0
 matplotlib~=3.3.4
 dtw-python~=1.1.10
 setuptools~=58.0.4
-tensorflow~=2.10.0
+tensorflow~=2.12.0
 scikit-learn~=1.0.2
 dtaidistance~=2.3.9
 joypy==0.2.6
