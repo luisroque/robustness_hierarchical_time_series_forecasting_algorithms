@@ -26,6 +26,7 @@ class PreprocessDatasets:
     def __init__(
         self,
         dataset,
+        freq,
         input_dir="./",
         top=500,
         test_size=None,
@@ -36,6 +37,7 @@ class PreprocessDatasets:
         if dataset == "m5":
             dataset = dataset.capitalize()
         self.dataset = dataset
+        self.freq = freq
         self.input_dir = input_dir
         self.api = "http://94.60.148.158:8086/apidownload/"
         self.top = top
@@ -44,6 +46,7 @@ class PreprocessDatasets:
         if self.sample_perc is not None and self.sample_perc > 1:
             raise ValueError("sample_perc must be between 0 and 1")
         self._create_directories()
+        self.pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}_groups_{self.freq}.pickle"
 
     def _create_directories(self):
         # Create directory to store original datasets if does not exist
@@ -57,21 +60,20 @@ class PreprocessDatasets:
         offset = x[0].ceil(freq) - x[0] + datetime.timedelta(days=-1)
         return (x + offset).floor(freq) - offset
 
-    def _get_dataset(self, file_type="csv"):
-        pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}.pickle"
-        if os.path.isfile(pickle_path):
-            with open(pickle_path, 'rb') as handle:
-                return pickle.load(handle)
-
+    def _get_dataset_path(self, file_type="csv"):
         path = f"{self.input_dir}data/original_datasets/{self.dataset}.{file_type}"
         if not os.path.isfile(path):
             try:
                 request.urlretrieve(f"{self.api}{self.dataset}", path)
-                return path
             except request.URLError as e:
                 print(f"Failed to download the dataset. Error: {e}")
-        else:
-            return path
+        return path
+
+    @staticmethod
+    def _load_pickle_file(file_path):
+        if os.path.isfile(file_path):
+            with open(file_path, 'rb') as handle:
+                return pickle.load(handle)
 
     @staticmethod
     def _transform_and_group_stv(stv):
@@ -112,7 +114,7 @@ class PreprocessDatasets:
 
         stv_weekly = stv.groupby(
             ["dept_id", "cat_id", "store_id", "state_id", "item_id", f]
-        ).sum().reset_index()
+        ).sum()
 
         return stv_weekly
 
@@ -161,7 +163,7 @@ class PreprocessDatasets:
         )
         groups = generate_groups_data_matrix(groups)
 
-        pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}_groups.pickle"
+        pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}_groups_{self.freq}.pickle"
         with open(pickle_path, 'wb') as handle:
             pickle.dump(groups, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -186,7 +188,11 @@ class PreprocessDatasets:
         return df_pivot
 
     def _prison(self):
-        path = self._get_dataset()
+        data = self._load_pickle_file(self.pickle_path)
+        if data is not None:
+            return data
+
+        path = self._get_dataset_path()
         prison = self._load_and_preprocess_data(path, "t", ["Unnamed: 0"])
         if prison is None:
             return {}
@@ -201,7 +207,11 @@ class PreprocessDatasets:
         return groups
 
     def _tourism(self):
-        path = self._get_dataset()
+        data = self._load_pickle_file(self.pickle_path)
+        if data is not None:
+            return data
+
+        path = self._get_dataset_path()
         tourism = self._load_and_preprocess_data(path, "Date")
         if tourism is None:
             return {}
@@ -217,7 +227,11 @@ class PreprocessDatasets:
 
     def _m5(self):
         """Preprocess the M5 dataset."""
-        path = self._get_dataset(file_type="zip")
+        data = self._load_pickle_file(self.pickle_path)
+        if data is not None:
+            return data
+
+        path = self._get_dataset_path(file_type="zip")
         if not path:
             return {}
 
@@ -239,6 +253,8 @@ class PreprocessDatasets:
 
         if self.weekly:
             stv = self._convert_to_weekly_data(stv)
+
+        stv = stv.reset_index()
 
         if self.top:
             stv = self._filter_top_series(
@@ -266,7 +282,11 @@ class PreprocessDatasets:
         return groups
 
     def _police(self):
-        path = self._get_dataset(file_type="xlsx")
+        data = self._load_pickle_file(self.pickle_path)
+        if data is not None:
+            return data
+
+        path = self._get_dataset_path(file_type="xlsx")
         police = pd.read_excel(path)
         cols = ["Crime", "Beat", "Street", "ZIP"]
         cols_date = cols.copy()

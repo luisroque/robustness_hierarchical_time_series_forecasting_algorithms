@@ -83,7 +83,6 @@ class TestModel(unittest.TestCase):
 
     def test_model_univariate_normal(self):
         encoder, decoder = get_mv_model(
-            mv_normal_dim=1,
             static_features=self.static_features_scaled,
             dynamic_features_df=self.dynamic_features,
             window_size=self.window_size,

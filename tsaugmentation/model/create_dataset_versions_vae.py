@@ -124,7 +124,7 @@ class CreateTransformedVersionsVAE:
         """
         if self.top:
             dataset = ppc(
-                self.dataset_name, top=self.top, weekly_m5=self.weekly_m5
+                self.dataset_name, top=self.top, freq=self.freq, weekly_m5=self.weekly_m5
             ).apply_preprocess()
         else:
             dataset = ppc(self.dataset_name).apply_preprocess()
