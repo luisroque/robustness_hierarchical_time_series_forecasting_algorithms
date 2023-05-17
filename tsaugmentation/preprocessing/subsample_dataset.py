@@ -6,10 +6,11 @@ from tsaugmentation.transformations.create_dataset_versions import CreateTransfo
 
 
 class CreateGroups:
-    def __init__(self, dataset_name: str, sample_perc: float = None):
+    def __init__(self, dataset_name: str, freq: str, sample_perc: float = None):
         """Creates a new instance of CreateGroups."""
         self.dataset_name = dataset_name
         self.sample_perc = sample_perc
+        self.freq = freq
         self.sample_int_perc = int(sample_perc * 100) if sample_perc is not None else None
 
     def create_subsampled_groups(self) -> dict:
@@ -38,7 +39,7 @@ class CreateGroups:
 
     def _preprocess_dataset(self, sample_perc: float = None) -> dict:
         """Preprocesses the dataset with the given sample percentage."""
-        dataset = PreprocessDatasets(self.dataset_name, sample_perc=sample_perc)
+        dataset = PreprocessDatasets(self.dataset_name, sample_perc=sample_perc, freq=self.freq)
         return dataset.apply_preprocess()
 
     @staticmethod
@@ -56,6 +57,6 @@ class CreateGroups:
             return pickle.load(f)
 
     def read_groups_transformed(self, method: str) -> np.ndarray:
-        transformer = CreateTransformedVersions(self.dataset_name)
+        transformer = CreateTransformedVersions(self.dataset_name, freq=self.freq)
         transformer.read_groups_transformed(method)
         return transformer.y_loaded_transformed

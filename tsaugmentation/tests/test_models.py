@@ -13,7 +13,7 @@ from tsaugmentation.feature_engineering.feature_transformations import (
 )
 from tsaugmentation.visualization.model_visualization import plot_loss
 from sklearn.preprocessing import MinMaxScaler
-from tsaugmentation.model.models import VAE, get_mv_model
+from tsaugmentation.model.models import CVAE, get_CVAE
 from tensorflow import keras
 
 
@@ -23,14 +23,15 @@ class TestModel(unittest.TestCase):
         self.window_size = 10
         self.latent_dim = 2
         self.dataset_name = 'tourism'
+        self.freq = 'M'
         dataset = tsag.preprocessing.PreprocessDatasets(
-            self.dataset_name
+            self.dataset_name, freq=self.freq
         ).apply_preprocess()
         data = dataset["predict"]["data_matrix"]
         n = data.shape[0]
         s = data.shape[1]
         self.n_features = s
-        n_train = n - self.window_size
+        n_train = n - self.window_size + 1
         groups = list(dataset["train"]["groups_names"].keys())
         df = pd.DataFrame(data)
         df = pd.concat(
@@ -44,11 +45,11 @@ class TestModel(unittest.TestCase):
         X_train_raw_scaled = scaler_target.transform(X_train_raw)
 
         static_features = create_static_features(
-            self.window_size, groups, dataset, n
+            self.window_size, groups, dataset, n_train
         )
 
         self.static_features_scaled = scale_static_features(static_features)
-        self.dynamic_features = create_dynamic_features(df, 'MS')
+        self.dynamic_features = create_dynamic_features(df, freq=self.freq)
         X_train = temporalize(X_train_raw_scaled, self.window_size)
 
         self.n_features_concat = X_train.shape[1] + self.dynamic_features.shape[1]
@@ -61,7 +62,7 @@ class TestModel(unittest.TestCase):
         )
 
     def test_model_mv_normal(self):
-        encoder, decoder = get_mv_model(
+        encoder, decoder = get_CVAE(
             static_features=self.static_features_scaled,
             dynamic_features_df=self.dynamic_features,
             window_size=self.window_size,
@@ -69,7 +70,7 @@ class TestModel(unittest.TestCase):
             n_features_concat=self.n_features_concat,
             latent_dim=self.latent_dim
         )
-        vae_full_mv = VAE(encoder, decoder, self.window_size)
+        vae_full_mv = CVAE(encoder, decoder, self.window_size)
         vae_full_mv.compile(optimizer=keras.optimizers.Adam())
 
         history = vae_full_mv.fit(
@@ -82,7 +83,7 @@ class TestModel(unittest.TestCase):
         self.assertTrue(history.history['loss'][-1] < 0.5)
 
     def test_model_univariate_normal(self):
-        encoder, decoder = get_mv_model(
+        encoder, decoder = get_CVAE(
             static_features=self.static_features_scaled,
             dynamic_features_df=self.dynamic_features,
             window_size=self.window_size,
@@ -90,7 +91,7 @@ class TestModel(unittest.TestCase):
             n_features_concat=self.n_features_concat,
             latent_dim=self.latent_dim
         )
-        vae_uni_mv = VAE(encoder, decoder, self.window_size)
+        vae_uni_mv = CVAE(encoder, decoder, self.window_size)
         vae_uni_mv.compile(optimizer=keras.optimizers.Adam())
 
         history = vae_uni_mv.fit(

@@ -20,7 +20,7 @@ class TestModel(unittest.TestCase):
         self.window_size = 10
         self.latent_dim = 2
         self.dataset = tsag.preprocessing.PreprocessDatasets(
-            "tourism"
+            "tourism", freq='M'
         ).apply_preprocess()
         data = self.dataset["predict"]["data_matrix"]
         self.n = data.shape[0]

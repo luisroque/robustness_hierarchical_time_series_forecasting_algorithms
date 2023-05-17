@@ -45,8 +45,13 @@ class PreprocessDatasets:
         self.sample_perc = sample_perc
         if self.sample_perc is not None and self.sample_perc > 1:
             raise ValueError("sample_perc must be between 0 and 1")
+        elif self.sample_perc:
+            self.sample_perc_int = int(self.sample_perc * 100)
+        else:
+            self.sample_perc_int = ""
         self._create_directories()
-        self.pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}_groups_{self.freq}.pickle"
+
+        self.pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}_groups_{self.freq}_{self.sample_perc_int}.pickle"
 
     def _create_directories(self):
         # Create directory to store original datasets if does not exist
@@ -72,7 +77,7 @@ class PreprocessDatasets:
     @staticmethod
     def _load_pickle_file(file_path):
         if os.path.isfile(file_path):
-            with open(file_path, 'rb') as handle:
+            with open(file_path, "rb") as handle:
                 return pickle.load(handle)
 
     @staticmethod
@@ -107,14 +112,15 @@ class PreprocessDatasets:
 
         return df_caldays
 
-    def _convert_to_weekly_data(self, stv):
+    def _convert_to_weekly_data(self, stv, cols):
         """Converts the stv DataFrame to weekly data."""
         rule = "7D"
         f = self._floor(stv.index, rule)
 
-        stv_weekly = stv.groupby(
-            ["dept_id", "cat_id", "store_id", "state_id", "item_id", f]
-        ).sum()
+        cols_group = cols.copy()
+        cols_group.append(f)
+
+        stv_weekly = stv.groupby(cols_group).sum()
 
         return stv_weekly
 
@@ -163,8 +169,7 @@ class PreprocessDatasets:
         )
         groups = generate_groups_data_matrix(groups)
 
-        pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}_groups_{self.freq}.pickle"
-        with open(pickle_path, 'wb') as handle:
+        with open(self.pickle_path, "wb") as handle:
             pickle.dump(groups, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         return groups
@@ -250,21 +255,22 @@ class PreprocessDatasets:
         stv = stv.merge(df_caldays, how="left", on="day")
         stv["Date"] = stv["Date"].astype("datetime64[ns]")
         stv = stv.set_index("Date")
+        cols = ["dept_id", "cat_id", "store_id", "state_id", "item_id"]
 
         if self.weekly:
-            stv = self._convert_to_weekly_data(stv)
+            stv = self._convert_to_weekly_data(stv, cols)
 
         stv = stv.reset_index()
 
         if self.top:
             stv = self._filter_top_series(
-                stv, ["dept_id", "cat_id", "store_id", "state_id", "item_id"]
+                stv, cols
             )
 
         stv_pivot = self._pivot_data(
             stv.reset_index(),
             "Date",
-            ["dept_id", "cat_id", "store_id", "state_id", "item_id"],
+            cols,
             "value",
         )
         stv_pivot = stv_pivot.fillna(0)

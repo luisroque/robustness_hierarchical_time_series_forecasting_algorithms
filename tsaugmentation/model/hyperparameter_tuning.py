@@ -3,7 +3,7 @@ import os
 from skopt import gp_minimize
 from skopt.space import Real, Integer
 from tsaugmentation.model.create_dataset_versions_vae import (
-    CreateTransformedVersionsVAE,
+    CreateTransformedVersionsCVAE,
 )
 from tsaugmentation.utils.logger import Logger
 
@@ -19,7 +19,7 @@ space = [
 
 
 def setup_hyperparameter_opt(dataset_name, freq):
-    vae_model = CreateTransformedVersionsVAE(dataset_name=dataset_name, freq=freq)
+    vae_model = CreateTransformedVersionsCVAE(dataset_name=dataset_name, freq=freq)
 
     def train_evaluate_vae(params):
         (
@@ -27,7 +27,6 @@ def setup_hyperparameter_opt(dataset_name, freq):
             batch_size,
             patience,
             window_size,
-            # mv_normal_dim,
         ) = params
 
         vae_model.window_size = int(window_size)

@@ -17,9 +17,9 @@ from .helper import RepeatVector3D, Sampling
 from keras.models import Model
 
 
-class VAE(keras.Model):
+class CVAE(keras.Model):
     """
-    Variational Autoencoder class that implements a custom architecture of encoder and decoder
+    Conditional Variational Autoencoder class that implements a custom architecture of encoder and decoder
     that handles raw data plus dynamic and static features as well as custom metrics to track
 
     Attributes
@@ -40,7 +40,7 @@ class VAE(keras.Model):
     """
 
     def __init__(self, encoder: keras.Model, decoder: keras.Model, window_size: int, **kwargs) -> None:
-        super(VAE, self).__init__(**kwargs)
+        super(CVAE, self).__init__(**kwargs)
         self.encoder = encoder
         self.decoder = decoder
         self.window_size = window_size
@@ -152,7 +152,7 @@ def get_flatten_size_encoder(
     return flatten_size
 
 
-def get_mv_model(
+def get_CVAE(
     static_features: dict,
     dynamic_features_df: pd.DataFrame,
     window_size: int,
@@ -166,7 +166,6 @@ def get_mv_model(
     If mv_normal_dim is equal to number of features the multivariate normal has the
     same dimensionality as the input/output series.
 
-    :param mv_normal_dim: dimensionality of the multivariate normal distribution learned
     :param static_features: static features to be inputed to the model
     :param dynamic_features_df: dynamic features to be inputed to the model
     :param window_size: size of the rolling window

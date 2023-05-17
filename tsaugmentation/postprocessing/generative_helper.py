@@ -4,7 +4,7 @@ from tsaugmentation.feature_engineering.feature_transformations import detempora
 
 
 def generate_new_time_series(
-    vae: keras.Model,
+    cvae: keras.Model,
     z_mean: np.ndarray,
     z_log_var: np.ndarray,
     window_size: int,
@@ -13,7 +13,7 @@ def generate_new_time_series(
     scaler_target: object,
     n_features: int,
     n: int,
-    init_samples_std: list[float] = None,
+    init_samples_std: float = None,
 ) -> np.ndarray:
     """
     This function generates a new time series using a trained Variational Autoencoder (VAE) model.
@@ -21,8 +21,7 @@ def generate_new_time_series(
     using the learned decoder.
 
     Args:
-        vae (keras.Model): Trained VAE model to use for generation.
-        init_samples_std (list[float]): Standard deviation for the initial samples.
+        cvae (keras.Model): Trained VAE model to use for generation.
         z_mean (np.ndarray): Mean of the latent space multivariate normal distribution for each series.
         z_log_var (np.ndarray): Logarithm of the variance of the latent space multivariate normal distribution for each series.
         window_size (int): Size of the rolling window.
@@ -31,6 +30,7 @@ def generate_new_time_series(
         scaler_target (object): Scaler trained on training data to be able to perform inverse transformations.
         n_features (int): Number of input features.
         n (int): Number of time points in the series to be generated.
+        init_samples_std (float): Standard deviation for the initial samples.
 
     Returns:
         np.ndarray: Predicted series in the shape (n - window_size, n_features).
@@ -51,7 +51,7 @@ def generate_new_time_series(
         d_feat = [dy[id_seq, :].reshape(1, window_size) for dy in dynamic_features_inp]
         s_feat = [st[id_seq, :].reshape(1, n_features, 1) for st in static_features_inp]
         dec_pred.append(
-            vae.decoder.predict(
+            cvae.decoder.predict(
                 [z_sample.reshape(1, latent_dim)]
                 + d_feat
                 + s_feat

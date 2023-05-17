@@ -18,15 +18,15 @@ from tsaugmentation.transformations.compute_similarities_summary_metrics import 
 )
 from tsaugmentation.visualization.model_visualization import plot_generated_vs_original
 from sklearn.preprocessing import MinMaxScaler
-from tsaugmentation.model.models import VAE, get_mv_model
+from tsaugmentation.model.models import CVAE, get_CVAE
 from tensorflow import keras
 
 
 class TestModel(unittest.TestCase):
     def setUp(self) -> None:
         self.window_size = 10
-        latent_dim = 2
-        dataset = tsag.preprocessing.PreprocessDatasets("tourism").apply_preprocess()
+        self.latent_dim = 1
+        dataset = tsag.preprocessing.PreprocessDatasets("tourism", freq='M').apply_preprocess()
         data = dataset["predict"]["data_matrix"]
         self.n = data.shape[0]
         self.n_train = self.n - self.window_size
@@ -65,18 +65,18 @@ class TestModel(unittest.TestCase):
             self.window_size,
         )
         static_features_inp_window = [
-            np.squeeze(arr[-218:]) for arr in self.static_features_inp
+            np.squeeze(arr[-219:]) for arr in self.static_features_inp
         ]
 
-        encoder, decoder = get_mv_model(
+        encoder, decoder = get_CVAE(
             static_features=static_features_scaled,
             dynamic_features_df=dynamic_features,
             window_size=self.window_size,
             n_features=self.n_features,
             n_features_concat=n_features_concat,
-            latent_dim=latent_dim,
+            latent_dim=self.latent_dim
         )
-        self.vae_full_mv = VAE(encoder, decoder, self.window_size)
+        self.vae_full_mv = CVAE(encoder, decoder, self.window_size)
         self.vae_full_mv.compile(optimizer=keras.optimizers.Adam())
 
         self.vae_full_mv.fit(
@@ -86,27 +86,28 @@ class TestModel(unittest.TestCase):
             shuffle=False,
         )
 
-        _, _, self.z = self.vae_full_mv.encoder.predict(
+        self.z_mean, self.z_log_var, self.z = self.vae_full_mv.encoder.predict(
             self.dynamic_features_inp + [X_inp] + static_features_inp_window
         )
         preds = self.vae_full_mv.decoder.predict(
             [self.z] + self.dynamic_features_inp + static_features_inp_window
         )
-        preds = detemporalize(preds)
+        preds = detemporalize(preds, self.window_size)
         self.X_hat = self.scaler_target.inverse_transform(preds)
 
     def test_generate_new_time_series(self):
 
         dec_pred_hat = generate_new_time_series(
-            self.vae_full_mv,
-            [0.5, 0.5],
-            self.z,
-            self.window_size,
-            self.dynamic_features_inp,
-            self.static_features_inp,
-            self.scaler_target,
-            self.n_features,
-            self.n_train,
+            cvae=self.vae_full_mv,
+            z_mean=self.z_mean,
+            z_log_var=self.z_log_var,
+            window_size=self.window_size,
+            dynamic_features_inp=self.dynamic_features_inp,
+            static_features_inp=self.static_features_inp,
+            scaler_target=self.scaler_target,
+            n_features=self.n_features,
+            n=self.n_train,
+            init_samples_std=0.5,
         )
 
         plot_generated_vs_original(
@@ -120,15 +121,16 @@ class TestModel(unittest.TestCase):
 
     def test_compute_similarity(self):
         dec_pred_hat = generate_new_time_series(
-            self.vae_full_mv,
-            [0.5, 0.5],
-            self.z,
-            self.window_size,
-            self.dynamic_features_inp,
-            self.static_features_inp,
-            self.scaler_target,
-            self.n_features,
-            self.n_train,
+            cvae=self.vae_full_mv,
+            z_mean=self.z_mean,
+            z_log_var=self.z_log_var,
+            window_size=self.window_size,
+            dynamic_features_inp=self.dynamic_features_inp,
+            static_features_inp=self.static_features_inp,
+            scaler_target=self.scaler_target,
+            n_features=self.n_features,
+            n=self.n_train,
+            init_samples_std=0.5,
         )
 
         self.assertTrue(

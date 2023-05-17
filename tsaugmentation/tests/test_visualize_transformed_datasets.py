@@ -9,7 +9,7 @@ class TestCreateTransformedDatasets(unittest.TestCase):
         self.dataset = 'prison'
 
     def test_read_files(self):
-        transformed_datasets = CreateTransformedVersions(self.dataset)
+        transformed_datasets = CreateTransformedVersions(self.dataset, freq='Q')
         transformed_datasets.create_new_version_single_transf()
         vi = Visualizer(self.dataset)
         vi._read_files(method='single_transf_jitter')

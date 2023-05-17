@@ -8,7 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
-from tsaugmentation.model.models import VAE, get_mv_model, get_flatten_size_encoder
+from tsaugmentation.model.models import CVAE, get_CVAE, get_flatten_size_encoder
 from tsaugmentation.feature_engineering.static_features import (
     create_static_features,
     scale_static_features,
@@ -31,9 +31,9 @@ class InvalidFrequencyError(Exception):
     pass
 
 
-class CreateTransformedVersionsVAE:
+class CreateTransformedVersionsCVAE:
     """
-    A class used to create new datasets from an original one using a VAE
+    A class used to create new datasets from an original one using a CVAE
 
     Attributes
     ----------
@@ -127,7 +127,7 @@ class CreateTransformedVersionsVAE:
                 self.dataset_name, top=self.top, freq=self.freq, weekly_m5=self.weekly_m5
             ).apply_preprocess()
         else:
-            dataset = ppc(self.dataset_name).apply_preprocess()
+            dataset = ppc(self.dataset_name, freq=self.freq).apply_preprocess()
 
         return dataset
 
@@ -244,9 +244,9 @@ class CreateTransformedVersionsVAE:
         learning_rate: float = 0.001,
         hyper_tuning: bool = False,
         load_weights: bool = True,
-    ) -> tuple[VAE, dict, EarlyStopping]:
+    ) -> tuple[CVAE, dict, EarlyStopping]:
         """
-        Training our VAE on the dataset supplied
+        Training our CVAE on the dataset supplied
 
         :param epochs: number of epochs to train the model
         :param batch_size: batch size to train the model
@@ -258,7 +258,7 @@ class CreateTransformedVersionsVAE:
         """
         self.features_input = self._feature_engineering(self.n_train)
 
-        encoder, decoder = get_mv_model(
+        encoder, decoder = get_CVAE(
             static_features=self.static_features_scaled,
             dynamic_features_df=self.dynamic_features,
             window_size=self.window_size,
@@ -267,8 +267,8 @@ class CreateTransformedVersionsVAE:
             latent_dim=latent_dim,
         )
 
-        vae = VAE(encoder, decoder, self.window_size)
-        vae.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate))
+        cvae = CVAE(encoder, decoder, self.window_size)
+        cvae.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate))
 
         es = EarlyStopping(
             patience=patience,
@@ -287,9 +287,9 @@ class CreateTransformedVersionsVAE:
         history = None
 
         if os.path.exists(weights_file) and not hyper_tuning and load_weights:
-            _ = vae(self.features_input)
+            _ = cvae(self.features_input)
             print("Loading existing weights...")
-            vae.load_weights(weights_file)
+            cvae.load_weights(weights_file)
         else:
             mc = ModelCheckpoint(
                 weights_file,
@@ -300,7 +300,7 @@ class CreateTransformedVersionsVAE:
                 verbose=1,
             )
 
-            history = vae.fit(
+            history = cvae.fit(
                 x=self.features_input,
                 epochs=epochs,
                 batch_size=batch_size,
@@ -308,17 +308,17 @@ class CreateTransformedVersionsVAE:
                 callbacks=[es, mc],
             )
 
-        return vae, history, es
+        return cvae, history, es
 
     def predict(
-        self, vae: VAE, similar_static_features: bool = False
+        self, cvae: CVAE, similar_static_features: bool = False
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Predict original time series using VAE, note that by default we will use the middle value
+        """Predict original time series using CVAE, note that by default we will use the middle value
          (0.5 since we have a MinMax scaling) for the static features so that we are sampling using
          the most similar structure possible and so reduce the distance between the series
 
         Args:
-            vae: vae model
+            cvae: cvae model
             similar_static_features: bool to indicate if we use the original static feature of a
                     middle value to increase the similarity between the series generated
 
@@ -336,19 +336,19 @@ class CreateTransformedVersionsVAE:
                     0.5 * np.ones((self.n_train, self.n_features, 1))
                 )
 
-            z_mean, z_log_var, z = vae.encoder.predict(
+            z_mean, z_log_var, z = cvae.encoder.predict(
                 dynamic_feat + X_inp + sim_static_features
             )
         else:
-            z_mean, z_log_var, z = vae.encoder.predict(
+            z_mean, z_log_var, z = cvae.encoder.predict(
                 dynamic_feat + X_inp + static_feat
             )
 
-        preds = vae.decoder.predict([z] + dynamic_feat + static_feat)
+        preds = cvae.decoder.predict([z] + dynamic_feat + static_feat)
         preds = detemporalize(preds, self.window_size)
         X_hat = self.scaler_target.inverse_transform(preds)
 
-        # To train the VAE the first points (equal to the window size) of the dataset were not predicted
+        # To train the CVAE the first points (equal to the window size) of the dataset were not predicted
         X_hat_complete = np.concatenate(
             (self.X_train_raw[: self.window_size], X_hat), axis=0
         )
@@ -357,7 +357,7 @@ class CreateTransformedVersionsVAE:
 
     def generate_transformed_time_series(
         self,
-        vae: VAE,
+        cvae: CVAE,
         z_mean: np.ndarray,
         z_log_var: np.ndarray,
         std_latent_space: float = None,
@@ -368,7 +368,7 @@ class CreateTransformedVersionsVAE:
         Generate new time series by sampling from the latent space
 
         Args:
-            vae: trained model
+            cvae: trained model
             z: parameters of the latent space distribution (gaussian) of shape
                         [num_samples, window_size, param] where param is 0 (mean) or 1 (std)
             std_latent_space: standard deviation to use when sampling from the learned distributions
@@ -383,7 +383,7 @@ class CreateTransformedVersionsVAE:
         dynamic_feat, X_inp, static_feat = self.features_input
 
         dec_pred_hat = generate_new_time_series(
-            vae=vae,
+            cvae=cvae,
             z_mean=z_mean,
             z_log_var=z_log_var,
             window_size=self.window_size,
@@ -407,7 +407,7 @@ class CreateTransformedVersionsVAE:
 
     def generate_new_datasets(
         self,
-        vae: VAE,
+        cvae: CVAE,
         z_mean: np.ndarray,
         z_log_var: np.ndarray,
         std_latent_space: list[float],
@@ -416,9 +416,9 @@ class CreateTransformedVersionsVAE:
         save: str = True,
     ) -> np.ndarray:
         """
-        Generate new datasets using the VAE trained model and different samples from its latent space
+        Generate new datasets using the CVAE trained model and different samples from its latent space
 
-        :param vae: model
+        :param cvae: model
         :param z: parameters of the latent space distribution (gaussian) of shape
                     [num_samples, window_size, param] where param is 0 (mean) or 1 (std)
         :param std_latent_space: list of standard deviations to use when sampling from the learned distributions
@@ -431,7 +431,7 @@ class CreateTransformedVersionsVAE:
         for v in range(1, n_versions + 1):
             for s in range(1, n_samples + 1):
                 y_new[v - 1, s - 1] = self.generate_transformed_time_series(
-                    vae=vae,
+                    cvae=cvae,
                     z_mean=z_mean,
                     z_log_var=z_log_var,
                     std_latent_space=std_latent_space[v - 1],

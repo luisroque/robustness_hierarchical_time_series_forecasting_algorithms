@@ -1,6 +1,6 @@
 import unittest
 from tsaugmentation.model.create_dataset_versions_vae import (
-    CreateTransformedVersionsVAE,
+    CreateTransformedVersionsCVAE,
 )
 from tsaugmentation.transformations.compute_similarities_summary_metrics import (
     compute_similarity_transformed_vs_original,
@@ -9,11 +9,10 @@ from tsaugmentation.transformations.compute_similarities_summary_metrics import 
 
 class TestModel(unittest.TestCase):
     def setUp(self) -> None:
-        self.create_dataset_vae = CreateTransformedVersionsVAE(
+        self.create_dataset_vae = CreateTransformedVersionsCVAE(
             dataset_name="police", freq="D", top=10
         )
 
-        self.model, _, _ = self.create_dataset_vae.fit(epochs=5)
         self.model, _, _ = self.create_dataset_vae.fit(epochs=5)
         (
             self.preds,
@@ -24,7 +23,7 @@ class TestModel(unittest.TestCase):
 
     def test_compute_similarity(self):
         dec_pred_hat = self.create_dataset_vae.generate_transformed_time_series(
-            vae=self.model,
+            cvae=self.model,
             z_mean=self.z_mean,
             z_log_var=self.z_log_var,
             std_latent_space=0.5,

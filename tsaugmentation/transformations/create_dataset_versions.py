@@ -20,8 +20,9 @@ class CreateTransformedVersions:
         what data to transform: only training data 'train' or the whole dataset 'whole'
     """
 
-    def __init__(self, dataset_name, input_dir="./", transf_data="whole"):
+    def __init__(self, dataset_name, freq, input_dir="./", transf_data="whole"):
         self.dataset_name = dataset_name
+        self.freq = freq
         self.input_dir = input_dir
         self.transformations = ["jitter", "scaling", "magnitude_warp", "time_warp"]
         self.transformations_w_random = self.transformations.copy()
@@ -91,7 +92,7 @@ class CreateTransformedVersions:
             np.save(f, y_new)
 
     def _get_dataset(self):
-        return ppc(self.dataset_name).apply_preprocess()
+        return ppc(self.dataset_name, freq=self.freq).apply_preprocess()
 
     def _visualize_transf_series(self, transf, method):
         self.visualizer.visualize_series_transf(transf=transf, method=method)
