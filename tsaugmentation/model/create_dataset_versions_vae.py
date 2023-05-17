@@ -59,12 +59,14 @@ class CreateTransformedVersionsVAE:
         transf_data: str = "whole",
         top: int = None,
         window_size: int = 10,
+        weekly_m5: bool = True,
     ):
         self.dataset_name = dataset_name
         self.input_dir = input_dir
         self.transf_data = transf_data
         self.freq = freq
         self.top = top
+        self.weekly_m5 = weekly_m5
         self.dataset = self._get_dataset()
         if window_size:
             self.window_size = window_size
@@ -121,7 +123,9 @@ class CreateTransformedVersionsVAE:
         Get dataset and apply preprocessing
         """
         if self.top:
-            dataset = ppc(self.dataset_name, top=self.top).apply_preprocess()
+            dataset = ppc(
+                self.dataset_name, top=self.top, weekly_m5=self.weekly_m5
+            ).apply_preprocess()
         else:
             dataset = ppc(self.dataset_name).apply_preprocess()
 
@@ -239,7 +243,7 @@ class CreateTransformedVersionsVAE:
         latent_dim: int = 2,
         learning_rate: float = 0.001,
         hyper_tuning: bool = False,
-        load_weights: bool = True
+        load_weights: bool = True,
     ) -> tuple[VAE, dict, EarlyStopping]:
         """
         Training our VAE on the dataset supplied

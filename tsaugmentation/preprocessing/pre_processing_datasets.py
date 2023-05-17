@@ -1,4 +1,5 @@
 import pandas as pd
+import pickle
 from .utils import generate_groups_data_flat, generate_groups_data_matrix
 from urllib import request
 from pathlib import Path
@@ -6,7 +7,6 @@ import os
 import zipfile
 import numpy as np
 import datetime
-from itertools import product
 
 
 class PreprocessDatasets:
@@ -58,6 +58,11 @@ class PreprocessDatasets:
         return (x + offset).floor(freq) - offset
 
     def _get_dataset(self, file_type="csv"):
+        pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}.pickle"
+        if os.path.isfile(pickle_path):
+            with open(pickle_path, 'rb') as handle:
+                return pickle.load(handle)
+
         path = f"{self.input_dir}data/original_datasets/{self.dataset}.{file_type}"
         if not os.path.isfile(path):
             try:
@@ -155,6 +160,11 @@ class PreprocessDatasets:
             sample_perc=self.sample_perc,
         )
         groups = generate_groups_data_matrix(groups)
+
+        pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}_groups.pickle"
+        with open(pickle_path, 'wb') as handle:
+            pickle.dump(groups, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
         return groups
 
     def _load_and_preprocess_data(self, path, date_column, drop_columns=None):
