@@ -13,7 +13,7 @@ class TestModel(unittest.TestCase):
             dataset_name="prison", freq="Q"
         )
 
-        self.model, _, _ = self.create_dataset_vae.fit(epochs=5)
+        self.model, _, _ = self.create_dataset_vae.fit(epochs=5, load_weights=False)
         (
             self.preds,
             self.z,

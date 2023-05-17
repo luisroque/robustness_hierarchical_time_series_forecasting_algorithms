@@ -227,15 +227,15 @@ class TestModel(unittest.TestCase):
         )
 
     def test_feature_transformations_temporalize(self):
-        X_train, y_train = temporalize(self.X_train_raw_scaled, self.window_size)
+        X_train = temporalize(self.X_train_raw_scaled, self.window_size)
 
-        self.assertTrue(X_train.shape == (218, 10, 304))
+        self.assertTrue(X_train.shape == (219, 10, 304))
 
     def test_feature_transformations_detemporalize(self):
-        X_train, y_train = temporalize(self.X_train_raw_scaled, self.window_size)
+        X_train = temporalize(self.X_train_raw_scaled, self.window_size)
         X_train_orig = detemporalize(X_train, self.window_size)
 
-        self.assertTrue(X_train_orig.shape == (218, 304))
+        self.assertTrue(X_train_orig.shape == (228, 304))
 
     def combine_preprocessed_inputs(self):
         dynamic_features_inp, X_inp, static_features_inp = combine_inputs_to_model(

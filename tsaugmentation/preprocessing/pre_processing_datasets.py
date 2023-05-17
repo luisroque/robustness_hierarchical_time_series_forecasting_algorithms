@@ -24,8 +24,15 @@ class PreprocessDatasets:
     """
 
     def __init__(
-        self, dataset, input_dir="./", top=500, test_size=None, sample_perc=None
+        self,
+        dataset,
+        input_dir="./",
+        top=500,
+        test_size=None,
+        sample_perc=None,
+        weekly_m5=True,
     ):
+        self.weekly = weekly_m5
         if dataset == "m5":
             dataset = dataset.capitalize()
         self.dataset = dataset
@@ -52,87 +59,18 @@ class PreprocessDatasets:
 
     def _get_dataset(self, file_type="csv"):
         path = f"{self.input_dir}data/original_datasets/{self.dataset}.{file_type}"
-        # Download the original file if it does not exist
         if not os.path.isfile(path):
             try:
                 request.urlretrieve(f"{self.api}{self.dataset}", path)
                 return path
-            except:
-                print("It is not possible to download the dataset at this time!")
+            except request.URLError as e:
+                print(f"Failed to download the dataset. Error: {e}")
         else:
             return path
 
-    def _prison(self):
-        path = self._get_dataset()
-        if not path:
-            return {}
-        prison = pd.read_csv(path, sep=",")
-        if self.test_size:
-            prison = prison[: self.test_size]
-
-        prison = prison.drop("Unnamed: 0", axis=1)
-        prison["Date"] = prison["t"].astype("datetime64[ns]")
-        prison.drop("t", axis=1)
-        prison["Date"] = pd.PeriodIndex(prison["Date"], freq="Q").to_timestamp()
-        prison_pivot = prison.pivot(
-            index="Date", columns=["state", "gender", "legal"], values="count"
-        )
-
-        groups_input = {"state": [0], "gender": [1], "legal": [2]}
-
-        groups = generate_groups_data_flat(
-            y=prison_pivot,
-            dates=list(prison_pivot.index),
-            groups_input=groups_input,
-            seasonality=4,
-            h=8,
-            sample_perc=self.sample_perc,
-        )
-        groups = generate_groups_data_matrix(groups)
-        return groups
-
-    def _tourism(self):
-        path = self._get_dataset()
-        if not path:
-            return {}
-        tourism = pd.read_csv(path, sep=",")
-        if self.test_size:
-            tourism = tourism[: self.test_size]
-
-        tourism["Date"] = tourism["Date"].astype("datetime64[ns]")
-        tourism_pivot = tourism.pivot(
-            index="Date", columns=["state", "zone", "region", "purpose"], values="Count"
-        )
-        tourism_pivot = tourism_pivot.reindex(sorted(tourism_pivot.columns), axis=1)
-
-        groups_input = {"state": [0], "zone": [1], "region": [2], "purpose": [3]}
-        groups = generate_groups_data_flat(
-            y=tourism_pivot,
-            dates=list(tourism_pivot.index),
-            groups_input=groups_input,
-            seasonality=12,
-            h=24,
-            sample_perc=self.sample_perc,
-        )
-        groups = generate_groups_data_matrix(groups)
-        return groups
-
-    def _m5(self):
-        path = self._get_dataset(file_type="zip")
-        if not path:
-            return {}
-        with zipfile.ZipFile(path, "r") as zip_ref:
-            zip_ref.extractall(f"{self.input_dir}data/original_datasets/")
-
-        INPUT_DIR = f"{self.input_dir}data/original_datasets/m5-data"
-        cal = pd.read_csv(f"{INPUT_DIR}/calendar.csv")
-        stv = pd.read_csv(f"{INPUT_DIR}/sales_train_validation.csv")
-
-        # M5 is too big to fit into memory, using test_size for testing purposes
-        if self.test_size:
-            stv = stv[: self.test_size]
-
-        # Transform column wide days to single column
+    @staticmethod
+    def _transform_and_group_stv(stv):
+        """Transforms and groups the stv DataFrame."""
         stv = stv.melt(
             list(stv.columns[:6]),
             var_name="day",
@@ -140,13 +78,17 @@ class PreprocessDatasets:
             ignore_index=True,
         )
 
-        # Group by the groups to consider (item_id have 3049 unique)
-        # item_id could be added here
         stv = (
             stv.groupby(["dept_id", "cat_id", "store_id", "state_id", "item_id", "day"])
             .sum("value")
             .reset_index()
         )
+
+        return stv
+
+    @staticmethod
+    def _generate_calendar_days(stv, cal):
+        """Generates a DataFrame of calendar days."""
         days_calendar = np.concatenate(
             (
                 stv["day"].unique().reshape(-1, 1),
@@ -156,50 +98,151 @@ class PreprocessDatasets:
         )
         df_caldays = pd.DataFrame(days_calendar, columns=["day", "Date"])
 
-        # Add calendar days
+        return df_caldays
+
+    def _convert_to_weekly_data(self, stv):
+        """Converts the stv DataFrame to weekly data."""
+        rule = "7D"
+        f = self._floor(stv.index, rule)
+
+        stv_weekly = stv.groupby(
+            ["dept_id", "cat_id", "store_id", "state_id", "item_id", f]
+        ).sum().reset_index()
+
+        return stv_weekly
+
+    def _filter_top_series(self, df, group_columns):
+        """Filters the top series from the df DataFrame."""
+        sort_column = (
+            "value"
+            if "value" in df.columns
+            else "Count"
+            if "Count" in df.columns
+            else None
+        )
+        if sort_column is None:
+            raise ValueError("Neither 'value' nor 'Count' column found in DataFrame")
+
+        df_top = (
+            df.groupby(group_columns)
+            .sum()
+            .reset_index()
+            .sort_values(by=sort_column, ascending=False)
+            .head(self.top)
+            .drop(sort_column, axis=1)
+        ).reset_index(drop=True)
+
+        df_f = pd.merge(
+            df_top,
+            df.reset_index(drop=True),
+            on=group_columns,
+            how="left",
+        )
+
+        df_f.drop_duplicates(inplace=True)
+
+        return df_f
+
+    def _generate_groups(self, df_pivot, groups_input, seasonality, h):
+        """Generates groups from the pivoted DataFrame."""
+
+        groups = generate_groups_data_flat(
+            y=df_pivot,
+            dates=list(df_pivot.index),
+            groups_input=groups_input,
+            seasonality=seasonality,
+            h=h,
+            sample_perc=self.sample_perc,
+        )
+        groups = generate_groups_data_matrix(groups)
+        return groups
+
+    def _load_and_preprocess_data(self, path, date_column, drop_columns=None):
+        """Loads and preprocesses data from the specified path."""
+        if not path:
+            return None
+        df = pd.read_csv(path, sep=",")
+        if self.test_size:
+            df = df[: self.test_size]
+        if drop_columns:
+            df = df.drop(drop_columns, axis=1)
+        df["Date"] = df[date_column].astype("datetime64[ns]")
+        return df
+
+    @staticmethod
+    def _pivot_data(df, index, columns, values):
+        """Pivots the specified DataFrame."""
+        df_pivot = df.pivot(index=index, columns=columns, values=values)
+        return df_pivot
+
+    def _prison(self):
+        path = self._get_dataset()
+        prison = self._load_and_preprocess_data(path, "t", ["Unnamed: 0"])
+        if prison is None:
+            return {}
+
+        prison["Date"] = pd.PeriodIndex(prison["Date"], freq="Q").to_timestamp()
+        prison_pivot = self._pivot_data(
+            prison, "Date", ["state", "gender", "legal"], "count"
+        )
+
+        groups_input = {"state": [0], "gender": [1], "legal": [2]}
+        groups = self._generate_groups(prison_pivot, groups_input, 4, 8)
+        return groups
+
+    def _tourism(self):
+        path = self._get_dataset()
+        tourism = self._load_and_preprocess_data(path, "Date")
+        if tourism is None:
+            return {}
+
+        tourism_pivot = self._pivot_data(
+            tourism, "Date", ["state", "zone", "region", "purpose"], "Count"
+        )
+        tourism_pivot = tourism_pivot.reindex(sorted(tourism_pivot.columns), axis=1)
+
+        groups_input = {"state": [0], "zone": [1], "region": [2], "purpose": [3]}
+        groups = self._generate_groups(tourism_pivot, groups_input, 12, 24)
+        return groups
+
+    def _m5(self):
+        """Preprocess the M5 dataset."""
+        path = self._get_dataset(file_type="zip")
+        if not path:
+            return {}
+
+        with zipfile.ZipFile(path, "r") as zip_ref:
+            zip_ref.extractall(f"{self.input_dir}data/original_datasets/")
+
+        input_dir = f"{self.input_dir}data/original_datasets/m5-data"
+        cal = pd.read_csv(f"{input_dir}/calendar.csv")
+        stv = pd.read_csv(f"{input_dir}/sales_train_validation.csv")
+
+        if self.test_size:
+            stv = stv[: self.test_size]
+
+        stv = self._transform_and_group_stv(stv)
+        df_caldays = self._generate_calendar_days(stv, cal)
         stv = stv.merge(df_caldays, how="left", on="day")
         stv["Date"] = stv["Date"].astype("datetime64[ns]")
         stv = stv.set_index("Date")
 
-        # Transform in weekly data
-        rule = "7D"
-        f = self._floor(stv.index, rule)
+        if self.weekly:
+            stv = self._convert_to_weekly_data(stv)
 
-        # item_id could be added here
-        stv_weekly = stv.groupby(
-            ["dept_id", "cat_id", "store_id", "state_id", "item_id", f]
-        ).sum()
+        if self.top:
+            stv = self._filter_top_series(
+                stv, ["dept_id", "cat_id", "store_id", "state_id", "item_id"]
+            )
 
-        # Filter top 1000 series
-        stv_weekly_top = (
-            stv_weekly.groupby(["dept_id", "cat_id", "store_id", "state_id", "item_id"])
-            .sum()
-            .sort_values(by="value", ascending=False)
-            .head(self.top)
-            .drop("value", axis=1)
-        )
-
-        # create a column marking df2 values
-        stv_weekly_top["marker"] = 1
-
-        # join the two, keeping all of df1's indices
-        joined = pd.merge(
-            stv_weekly.reset_index(),
-            stv_weekly_top,
-            on=["dept_id", "cat_id", "store_id", "state_id", "item_id"],
-            how="left",
-        )
-        stv_weekly_f = joined[joined["marker"] == 1][stv_weekly.reset_index().columns]
-
-        # item_id could be added here
-        stv_pivot = stv_weekly_f.reset_index().pivot(
-            index="Date",
-            columns=["dept_id", "cat_id", "store_id", "state_id", "item_id"],
-            values="value",
+        stv_pivot = self._pivot_data(
+            stv.reset_index(),
+            "Date",
+            ["dept_id", "cat_id", "store_id", "state_id", "item_id"],
+            "value",
         )
         stv_pivot = stv_pivot.fillna(0)
 
-        # item_id could be added here
         groups_input = {
             "Department": [0],
             "Category": [1],
@@ -208,21 +251,12 @@ class PreprocessDatasets:
             "Item": [4],
         }
 
-        groups = generate_groups_data_flat(
-            y=stv_pivot,
-            dates=list(stv_pivot.index),
-            groups_input=groups_input,
-            seasonality=52,
-            h=12,
-            sample_perc=self.sample_perc,
-        )
-        groups = generate_groups_data_matrix(groups)
+        seasonality, h = (52, 12) if self.weekly else (365, 30)
+        groups = self._generate_groups(stv_pivot, groups_input, seasonality, h)
         return groups
 
-    def _police(self, start_date="2021-01-01", end_date="2021-11-30"):
+    def _police(self):
         path = self._get_dataset(file_type="xlsx")
-        if not path:
-            return {}
         police = pd.read_excel(path)
         cols = ["Crime", "Beat", "Street", "ZIP"]
         cols_date = cols.copy()
@@ -253,66 +287,34 @@ class PreprocessDatasets:
         police = police.drop(["Id"], axis=1)
         police = police.astype({"ZIP": "string"})
 
-        # Filter top 1000 series
-        police_top = (
-            police.groupby(cols)
-            .sum()
-            .sort_values(by="Count", ascending=False)
-            .head(self.top)
-            .drop("Count", axis=1)
-            .reset_index()
-        )
-        police = police.groupby(cols_date).sum().reset_index()
+        police = self._filter_top_series(police, ["Crime", "Beat", "Street", "ZIP"])
 
-        # create a column marking df2 values
-        police_top["marker"] = 1
+        police = self._fill_missing_dates(police, cols_date)
 
-        # join the two, keeping all of df1's indices
-        joined = pd.merge(police, police_top, on=cols, how="left")
-        police_f = joined[joined["marker"] == 1][police.columns]
-        police_f = police_f.reset_index().drop("index", axis=1)
-        police_f = police_f.groupby(cols_date).sum().reset_index().set_index("Date")
-
-        # build a reference dataframe with all the dates to be merges, as the original does not have data for all days
-        police_to_merge = (
-            police_f.reset_index().drop(["Date", "Count"], axis=1).drop_duplicates()
-        )
-        idx = pd.date_range(start_date, end_date)
-        lens = len(idx)
-        rest_to_concat = pd.DataFrame(
-            np.array(
-                [
-                    np.repeat(police_to_merge.iloc[:, i].values, lens)
-                    for i in range(len(cols) - 1)
-                ]
-            ).T
-        )
-        complete_data = pd.DataFrame(product(list(police_to_merge.iloc[:, -1]), idx))
-        frames = [rest_to_concat, complete_data]
-        police_base = pd.concat(frames, axis=1)
-        police_base.columns = cols_date
-
-        police_f = police_f.reset_index()
-        police = police_base.merge(police_f, how="left", on=cols_date)
-
-        police_pivot = police.reset_index().pivot(
-            index="Date", columns=cols, values="Count"
-        )
+        police_pivot = self._pivot_data(police.reset_index(), "Date", cols, "Count")
         police_pivot = police_pivot.fillna(0)
 
         groups_input = {"Crime": [0], "Beat": [1], "Street": [2], "ZIP": [3]}
 
-        groups = generate_groups_data_flat(
-            y=police_pivot,
-            dates=list(police_pivot.index),
-            groups_input=groups_input,
-            seasonality=7,
-            h=30,
-            sample_perc=self.sample_perc,
-        )
-        groups = generate_groups_data_matrix(groups)
-
+        groups = self._generate_groups(police_pivot, groups_input, 365, 30)
         return groups
+
+    @staticmethod
+    def _fill_missing_dates(df, cols):
+        """
+        Fill missing dates in DataFrame.
+        """
+        df["Date"] = pd.to_datetime(df["Date"])
+        df.set_index("Date", inplace=True)
+
+        if "Date" in cols:
+            cols.remove("Date")
+
+        df = df.groupby(cols).resample("D").sum().reset_index().sort_values(by="Date")
+
+        df["Count"].fillna(0, inplace=True)
+
+        return df
 
     def apply_preprocess(self):
         dataset_new = getattr(PreprocessDatasets, "_" + self.dataset.lower())(self)

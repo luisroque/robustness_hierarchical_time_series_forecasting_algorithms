@@ -49,7 +49,7 @@ class TestModel(unittest.TestCase):
 
         self.static_features_scaled = scale_static_features(static_features)
         self.dynamic_features = create_dynamic_features(df, 'MS')
-        X_train, y_train = temporalize(X_train_raw_scaled, self.window_size)
+        X_train = temporalize(X_train_raw_scaled, self.window_size)
 
         self.n_features_concat = X_train.shape[1] + self.dynamic_features.shape[1]
 
@@ -62,7 +62,6 @@ class TestModel(unittest.TestCase):
 
     def test_model_mv_normal(self):
         encoder, decoder = get_mv_model(
-            mv_normal_dim=self.n_features,
             static_features=self.static_features_scaled,
             dynamic_features_df=self.dynamic_features,
             window_size=self.window_size,

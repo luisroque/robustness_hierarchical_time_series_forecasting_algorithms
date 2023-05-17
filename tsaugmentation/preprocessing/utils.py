@@ -49,40 +49,32 @@ class DataTransform:
         return pred
 
 
-def sample_data(y: pd.DataFrame, dates: List, sample_perc: float, h: int):
+def sample_data(df: pd.DataFrame, dates: list, sample_perc: float, h: int) -> tuple:
     """
-    Samples data from the original dataframe and dates
+    Sample data from the original dataframe and dates
 
     Args:
-        y: dataframe with the original dataset
-        dates: original dates
-        sample_perc: percentage of the dataset to sample from the original
+        df: DataFrame with the original dataset
+        dates: List of original dates
+        sample_perc: Fraction of the dataset to sample from the original
+        h: Number of tail elements to always keep
+
+    Returns:
+        Sampled dataframe, filtered dates and corresponding indices
     """
-    y_reindex = y.reset_index()
-    # we want to keep the first and last point of the train data
-    # we also only want to sample the training and not the test data
-    y_reindex_copy = y_reindex.copy()
-    y_reindex_copy = y_reindex_copy[~y_reindex_copy.index.isin(y_reindex.iloc[-h - 1:].index)]
-    y_reindex_copy = y_reindex_copy[~y_reindex_copy.index.isin(y_reindex.iloc[0].index)]
-    sampled_df = y_reindex_copy.sample(frac=sample_perc)
-    sampled_with_ends = pd.concat([y_reindex[:1], y_reindex.iloc[-h-1:], sampled_df], ignore_index=True)
+    # Exclude the first and last h+1 rows from sampling
+    sample_df = df.iloc[1:-h - 1].sample(frac=sample_perc)
+    sampled_with_ends = pd.concat([df.iloc[:1], df.iloc[-h - 1:], sample_df]).sort_index()
 
-    sampled_with_ends_date = sampled_with_ends.set_index("Date")
-    sample_index = sampled_with_ends_date.index
-    y_reindex_date = y_reindex.set_index('Date')
-    y_sample = y_reindex_date[y_reindex_date.index.isin(sample_index)]
-    original_index = y_reindex_date.index
-    sample_index = y_sample.index
-    difference_index = original_index.intersection(sample_index)
+    # Compute indices for filtered dates
+    indices = sampled_with_ends.index
 
-    filtered_dates = []
-    x_values = []
-    for i in range(len(y_reindex)):
-        if y_reindex_date.index[i] in difference_index:
-            filtered_dates.append(dates[i])
-            x_values.append(i)
+    date_index_map = {date: idx for idx, date in enumerate(dates)}
 
-    return y_sample, filtered_dates, x_values
+    filtered_dates = [date for date in indices if date in date_index_map]
+    x_values = [date_index_map[date] for date in filtered_dates]
+
+    return sampled_with_ends, filtered_dates, x_values
 
 
 def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_perc=0.5):
