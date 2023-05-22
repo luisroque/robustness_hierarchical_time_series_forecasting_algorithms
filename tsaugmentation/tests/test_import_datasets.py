@@ -6,13 +6,13 @@ import tsaugmentation as tsag
 class TestModel(unittest.TestCase):
     def test_import_prison(self):
         self.data = tsag.preprocessing.PreprocessDatasets(
-            "prison", freq="Q", test_size=48 * 2
+            "prison", freq="Q", test_size=2
         ).apply_preprocess()
         self.assertTrue(self.data["train"]["data"].shape == (40, 2))
 
     def test_import_tourism(self):
         self.data = tsag.preprocessing.PreprocessDatasets(
-            "tourism", freq="M", test_size=228 * 50
+            "tourism", freq="M", test_size=50
         ).apply_preprocess()
         self.assertTrue(self.data["train"]["data"].shape == (204, 50))
 
@@ -36,7 +36,7 @@ class TestModel(unittest.TestCase):
 
     def test_import_prison_50perc_data(self):
         self.data = tsag.preprocessing.PreprocessDatasets(
-            "prison", test_size=48 * 2, freq="Q", sample_perc=0.5
+            "prison", test_size=2, freq="Q", sample_perc=0.5
         ).apply_preprocess()
         self.assertTrue(
             self.data["train"]["data"].shape == (int((48 - self.data["h"]) / 2) + 1, 2)
@@ -44,7 +44,7 @@ class TestModel(unittest.TestCase):
 
     def test_import_prison_50perc_data_x_values(self):
         self.data = tsag.preprocessing.PreprocessDatasets(
-            "prison", test_size=48 * 2, freq="Q", sample_perc=0.5
+            "prison", test_size=2, freq="Q", sample_perc=0.5
         ).apply_preprocess()
         self.assertListEqual(
             self.data["predict"]["x_values"][-self.data["h"] :], list(np.arange(40, 48))
@@ -52,7 +52,7 @@ class TestModel(unittest.TestCase):
 
     def test_import_tourism_50perc_data(self):
         self.data = tsag.preprocessing.PreprocessDatasets(
-            "tourism", test_size=228 * 50, freq="M", sample_perc=0.5
+            "tourism", test_size=50, freq="M", sample_perc=0.5
         ).apply_preprocess()
         self.assertTrue(
             self.data["train"]["data"].shape

@@ -63,6 +63,7 @@ class CreateTransformedVersionsCVAE:
         window_size: int = 10,
         weekly_m5: bool = True,
         test_size: int = None,
+        dynamic_feat_trig: bool = True,
     ):
         self.dataset_name = dataset_name
         self.input_dir = input_dir
@@ -70,6 +71,7 @@ class CreateTransformedVersionsCVAE:
         self.freq = freq
         self.top = top
         self.test_size = test_size
+        self.dynamic_feat_trig = dynamic_feat_trig
         self.weekly_m5 = weekly_m5
         self.dataset = self._get_dataset()
         if window_size:
@@ -127,15 +129,15 @@ class CreateTransformedVersionsCVAE:
         Get dataset and apply preprocessing
         """
         ppc_args = {
-            'dataset': self.dataset_name,
-            'freq': self.freq,
-            'weekly_m5': self.weekly_m5,
+            "dataset": self.dataset_name,
+            "freq": self.freq,
+            "weekly_m5": self.weekly_m5,
         }
 
         if self.top is not None:
-            ppc_args['top'] = self.top
+            ppc_args["top"] = self.top
         if self.test_size is not None:
-            ppc_args['test_size'] = self.test_size
+            ppc_args["test_size"] = self.test_size
 
         dataset = ppc(**ppc_args).apply_preprocess()
 
@@ -189,10 +191,7 @@ class CreateTransformedVersionsCVAE:
         Args:
             n: number of samples
         """
-        static_features = create_static_features(
-            self.window_size, self.groups, self.dataset, n
-        )
-        self.static_features_scaled = scale_static_features(static_features)
+        self.static_features = create_static_features(self.groups, self.dataset)
 
     def _feature_engineering(
         self, n: int
@@ -212,9 +211,13 @@ class CreateTransformedVersionsCVAE:
         if n == self.n:
             # if we want to generate new time series with the same size
             # as the original ones
-            self.dynamic_features = create_dynamic_features(self.df_generate, self.freq)
+            self.dynamic_features = create_dynamic_features(
+                self.df_generate, self.freq, trigonometric=self.dynamic_feat_trig
+            )
         else:
-            self.dynamic_features = create_dynamic_features(self.df, self.freq)
+            self.dynamic_features = create_dynamic_features(
+                self.df, self.freq, trigonometric=self.dynamic_feat_trig
+            )
 
         X_train = temporalize(X_train_raw_scaled, self.window_size)
 
@@ -227,7 +230,7 @@ class CreateTransformedVersionsCVAE:
         ) = combine_inputs_to_model(
             X_train,
             self.dynamic_features,
-            self.static_features_scaled,
+            self.static_features,
             self.window_size,
         )
 
@@ -236,7 +239,7 @@ class CreateTransformedVersionsCVAE:
     def get_flatten_size_encoder(self):
         _ = self._feature_engineering(self.n_train)
         flatten_size = get_flatten_size_encoder(
-            static_features=self.static_features_scaled,
+            static_features=self.static_features,
             dynamic_features_df=self.dynamic_features,
             window_size=self.window_size,
             n_features=self.n_features,
@@ -269,12 +272,13 @@ class CreateTransformedVersionsCVAE:
         self.features_input = self._feature_engineering(self.n_train)
 
         encoder, decoder = get_CVAE(
-            static_features=self.static_features_scaled,
-            dynamic_features_df=self.dynamic_features,
+            static_features=self.features_input[2],
+            dynamic_features=self.features_input[0],
             window_size=self.window_size,
             n_features=self.n_features,
             n_features_concat=self.n_features_concat,
             latent_dim=latent_dim,
+            embedding_dim=8
         )
 
         cvae = CVAE(encoder, decoder, self.window_size)

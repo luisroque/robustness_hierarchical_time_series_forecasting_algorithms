@@ -55,7 +55,7 @@ class PreprocessDatasets:
         self.pickle_path = (
             f"{self.input_dir}data/original_datasets/"
             f"{self.dataset}_groups_{self.freq}_{self.sample_perc_int}_"
-            f"{self.test_size}.pickle"
+            f"{self.test_size}_{self.top}.pickle"
         )
 
     def _create_directories(self):

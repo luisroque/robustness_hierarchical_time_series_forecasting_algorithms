@@ -3,42 +3,54 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def create_dynamic_features(df: pd.DataFrame, freq: str) -> pd.DataFrame:
+def create_dynamic_features(
+    df: pd.DataFrame, freq: str, trigonometric: bool = True
+) -> pd.DataFrame:
     """
-    Create a dataframe with the dynamic features computed using trigonometric functions -> cos(year), sin(year), cos(month), sin(month).
-    The features are dynamic since they change over time (over the number of samples n)
+    Create a dataframe with the dynamic features computed.
+    The features are dynamic since they change over time (over the number of samples n).
 
     :param df: dataframe with the raw data
     :param freq: frequency of the dataset
+    :param trigonometric: whether to use trigonometric functions or simple extraction
 
-    :return: new dataframe with the dynamic features
-    :return: dataframe converted to np.ndarray
+    :return: new dataframe with the dynamic features converted to np.ndarray
     """
-
     train_df_input = pd.DataFrame()
 
-    if (df.index.year.max() - df.index.year.min()) > 0:
-        train_df_input['year_cos'] = np.cos(
-            2 * np.pi * (df.index.year - df.index.year.min()) / (df.index.year.max() - df.index.year.min()))
-        train_df_input['year_sin'] = np.sin(
-            2 * np.pi * (df.index.year - df.index.year.min()) / (df.index.year.max() - df.index.year.min()))
-    if (df.index.month.max() - df.index.month.min()) > 0:
-        train_df_input['month_cos'] = np.cos(
-            2 * np.pi * (df.index.month - df.index.month.min()) / (df.index.month.max() - df.index.month.min()))
-        train_df_input['month_sin'] = np.sin(
-            2 * np.pi * (df.index.month - df.index.month.min()) / (df.index.month.max() - df.index.month.min()))
+    freq_to_period = {
+        "D": ("day", "week", "month", "quarter", "year"),
+        "W": ("week", "month", "quarter", "year"),
+        "MS": ("month", "quarter", "year"),
+        "QS": ("quarter", "year"),
+        "Y": ("year",),
+    }
 
-    # Only create the features below when the frequency is high enough (e.g. weekly or daily)
-    if (df.index.week.max() - df.index.week.min()) > 0 and freq not in ('QS', 'MS'):
-        train_df_input['week_cos'] = np.cos(
-            2 * np.pi * (df.index.week - df.index.week.min()) / (df.index.week.max() - df.index.week.min()))
-        train_df_input['week_sin'] = np.sin(
-            2 * np.pi * (df.index.week - df.index.week.min()) / (df.index.week.max() - df.index.week.min()))
-    if (df.index.day.max() - df.index.day.min()) > 0 and freq not in ('QS', 'MS', 'W'):
-        train_df_input['day_cos'] = np.cos(
-            2 * np.pi * (df.index.day - df.index.day.min()) / (df.index.day.max() - df.index.day.min()))
-        train_df_input['day_sin'] = np.sin(
-            2 * np.pi * (df.index.day - df.index.day.min()) / (df.index.day.max() - df.index.day.min()))
+    periods = freq_to_period.get(freq, ("year",))
+
+    for period in periods:
+        if trigonometric:
+            max_val = getattr(df.index, period).max()
+            min_val = getattr(df.index, period).min()
+
+            if (max_val - min_val) > 0:
+                train_df_input[f"{period}_cos"] = np.cos(
+                    2
+                    * np.pi
+                    * (getattr(df.index, period) - min_val)
+                    / (max_val - min_val)
+                )
+                train_df_input[f"{period}_sin"] = np.sin(
+                    2
+                    * np.pi
+                    * (getattr(df.index, period) - min_val)
+                    / (max_val - min_val)
+                )
+        else:
+            period_values = getattr(df.index, period)
+            min_val = period_values.min()
+            encoded_values = period_values - min_val
+            train_df_input[f"{period}"] = encoded_values.astype(np.int32)
 
     return train_df_input.astype(np.float32)
 

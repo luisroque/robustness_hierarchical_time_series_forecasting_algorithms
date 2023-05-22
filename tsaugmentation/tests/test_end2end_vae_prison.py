@@ -10,7 +10,7 @@ from tsaugmentation.transformations.compute_similarities_summary_metrics import 
 class TestModel(unittest.TestCase):
     def setUp(self) -> None:
         self.create_dataset_vae = CreateTransformedVersionsCVAE(
-            dataset_name="prison", freq="Q"
+            dataset_name="prison", freq="Q", dynamic_feat_trig=False
         )
 
         self.model, _, _ = self.create_dataset_vae.fit(epochs=5, load_weights=False)
@@ -50,4 +50,4 @@ class TestModel(unittest.TestCase):
 
     def test_dynamic_features_creation(self):
         dynamic_feat, _, _ = self.create_dataset_vae._feature_engineering(48)
-        self.assertTrue(len(dynamic_feat) == 4)
+        self.assertTrue(len(dynamic_feat) == 2)

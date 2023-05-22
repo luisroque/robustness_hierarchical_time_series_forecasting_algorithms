@@ -16,7 +16,7 @@ def get_group_features(feature: str, dataset: dict) -> np.ndarray:
     return dataset['train']['groups_idx'][feature]
 
 
-def create_static_features(window_size: int, groups: list, dataset: dict, n: int) -> dict:
+def create_static_features(groups: list, dataset: dict) -> dict:
     """
     Create an object with key group and value (n,s) ndarray encoding the static features.
     Note that the features are only different for each series (dimension s) and are
@@ -25,11 +25,8 @@ def create_static_features(window_size: int, groups: list, dataset: dict, n: int
     Note that it returns shorter time series, a number of samples equal to the window size
     is removed from all the time series to ensure that the shapes match.
 
-    :param window_size: size of the rolling window used to transform the dataset to be
-        fit the requirements of a RNN
     :param groups: groups in the data
     :param dataset: dataset full info
-    :param n: number of samples
 
     :return: object with key group and value ndarray (n,s) encoding the static features
     """
@@ -38,7 +35,7 @@ def create_static_features(window_size: int, groups: list, dataset: dict, n: int
     for group in groups:
         groups_arrays[group] = {}
         groups_arrays[group] = get_group_features(group, dataset)
-        groups_arrays[group] = np.tile(groups_arrays[group].reshape(-1, 1), n).T
+        groups_arrays[group] = groups_arrays[group].reshape(-1, 1)
 
     return groups_arrays
 

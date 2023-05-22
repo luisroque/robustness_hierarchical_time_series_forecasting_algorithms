@@ -35,7 +35,7 @@ class TestCreateTransformedDatasets(unittest.TestCase):
         transformed_datasets = CreateTransformedVersions(self.dataset, freq=self.freq)
         transformed_datasets.create_new_version_single_transf()
         file_count = len([name for name in os.listdir("./data/transformed_datasets/")])
-        self.assertEqual(file_count, 105)
+        self.assertEqual(file_count, 106)
 
     def load_groups_transformed(
         self,

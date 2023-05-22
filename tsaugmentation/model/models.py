@@ -11,9 +11,10 @@ from keras.layers import (
     Dense,
     TimeDistributed,
 )
-from keras.layers import Dropout, RepeatVector
+from keras.layers import Dropout, RepeatVector, Embedding
 from keras import backend as K
-from .helper import RepeatVector3D, Sampling
+import numpy as np
+from .helper import Sampling
 from keras.models import Model
 
 
@@ -39,7 +40,9 @@ class CVAE(keras.Model):
 
     """
 
-    def __init__(self, encoder: keras.Model, decoder: keras.Model, window_size: int, **kwargs) -> None:
+    def __init__(
+        self, encoder: keras.Model, decoder: keras.Model, window_size: int, **kwargs
+    ) -> None:
         super(CVAE, self).__init__(**kwargs)
         self.encoder = encoder
         self.decoder = decoder
@@ -95,7 +98,9 @@ class CVAE(keras.Model):
                 )
                 pred = self.decoder([z] + dynamic_features + static_features)
 
-                reconstruction_loss = K.mean(K.square(inp_data - pred)) * self.window_size
+                reconstruction_loss = (
+                    K.mean(K.square(inp_data - pred)) * self.window_size
+                )
                 kl_loss = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
                 kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
                 total_loss = reconstruction_loss + kl_loss
@@ -153,21 +158,19 @@ def get_flatten_size_encoder(
 
 
 def get_CVAE(
-    static_features: dict,
-    dynamic_features_df: pd.DataFrame,
+    static_features: list,
+    dynamic_features: list,
     window_size: int,
     n_features: int,
     n_features_concat: int,
     latent_dim: int,
+    embedding_dim: int,
 ) -> tuple[keras.Model, keras.Model]:
     """
     Creating the encoder and decoder models using dynamic and static features
-    and learning multivariate normal distribution with dim equal to mv_normal_dim.
-    If mv_normal_dim is equal to number of features the multivariate normal has the
-    same dimensionality as the input/output series.
 
     :param static_features: static features to be inputed to the model
-    :param dynamic_features_df: dynamic features to be inputed to the model
+    :param dynamic_features: dynamic features to be inputed to the model
     :param window_size: size of the rolling window
     :param n_features: number of features inputed to the model or time series
     :param n_features_concat: number of features inputed to the network after concatenation (raw data + dynamic features)
@@ -182,16 +185,30 @@ def get_CVAE(
     inp = Input(shape=(window_size, n_features))
 
     dynamic_features_inp = []
-    for feature in range(len(dynamic_features_df.columns)):
-        inp_dyn_feat = Input(shape=(window_size, 1))
+    dynamic_features_emb = []
+    for feature in range(len(dynamic_features)):
+        inp_dyn_feat = Input(shape=(window_size,))
         dynamic_features_inp.append(inp_dyn_feat)
+        emb_dyn_feat = Embedding(
+            input_dim=int(dynamic_features[feature].max()+1),
+            output_dim=embedding_dim,
+        )(inp_dyn_feat)
+        emb_dyn_feat = Reshape((window_size, embedding_dim))(emb_dyn_feat)
+        dynamic_features_emb.append(emb_dyn_feat)
 
     static_feat_inp = []
-    for feature, arr in static_features.items():
-        inp_static_feat = Input(shape=(n_features, 1))
+    static_feat_emb = []
+    for feature in range(len(static_features)):
+        inp_static_feat = Input(shape=(n_features,))
         static_feat_inp.append(inp_static_feat)
+        emb_static_feat = Embedding(
+            input_dim=int(static_features[feature].max()+1),
+            output_dim=embedding_dim,
+        )(inp_static_feat)
+        emb_static_feat = Flatten()(emb_static_feat)
+        static_feat_emb.append(emb_static_feat)
 
-    enc = Concatenate()(dynamic_features_inp + [inp])
+    enc = Concatenate()(dynamic_features_emb + [inp])
     enc = Bidirectional(
         LSTM(
             n_features,
@@ -202,8 +219,7 @@ def get_CVAE(
     )(enc)
 
     enc = Dropout(0.5)(enc)
-    enc = Reshape((-1, 1))(enc)
-    enc = Concatenate()([enc] + static_feat_inp)
+    enc = Concatenate()([enc] + static_feat_emb)
     enc = Flatten()(enc)
     enc = Dense(latent_dim, activation="relu")(enc)
 
@@ -212,15 +228,16 @@ def get_CVAE(
 
     z = Sampling()([z_mean, z_log_var])
 
-    encoder = Model(dynamic_features_inp + [inp] + static_feat_inp, [z_mean, z_log_var, z])
+    encoder = Model(
+        dynamic_features_inp + [inp] + static_feat_inp, [z_mean, z_log_var, z]
+    )
 
     # decoder
-
-    inp_z = Input(shape=(latent_dim, ))
+    inp_z = Input(shape=(latent_dim,))
 
     dec = RepeatVector(window_size)(inp_z)
     dec = Reshape((window_size, -1))(dec)
-    dec = Concatenate()([dec] + dynamic_features_inp)
+    dec = Concatenate()([dec] + dynamic_features_emb)
 
     dec = Bidirectional(
         LSTM(
@@ -232,12 +249,10 @@ def get_CVAE(
         merge_mode="ave",
     )(dec)
 
-    dec = TimeDistributed(Dense(n_features))(dec)
-    dec = K.permute_dimensions(dec, (0, 2, 1))
-    dec = Concatenate(axis=2)([dec] + static_feat_inp)
-    dec = Dense(window_size)(dec)
-    dec = K.permute_dimensions(dec, (0, 2, 1))
-    out = TimeDistributed(Dense(n_features))(dec)
+    out = Flatten()(dec)
+    out = Concatenate()([out] + static_feat_emb)
+    out = Dense(window_size * n_features)(out)
+    out = Reshape((window_size, n_features))(out)
 
     decoder = Model([inp_z] + dynamic_features_inp + static_feat_inp, out)
 
