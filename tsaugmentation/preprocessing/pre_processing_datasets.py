@@ -269,7 +269,7 @@ class PreprocessDatasets:
             stv = self._filter_top_series(stv, cols)
 
         if self.test_size:
-            stv = stv[: self.test_size]
+            stv = stv.iloc[:, self.test_size]
 
         stv_pivot = self._pivot_data(
             stv.reset_index(),
