@@ -253,9 +253,6 @@ class PreprocessDatasets:
         cal = pd.read_csv(f"{input_dir}/calendar.csv")
         stv = pd.read_csv(f"{input_dir}/sales_train_validation.csv")
 
-        if self.test_size:
-            stv = stv[: self.test_size]
-
         stv = self._transform_and_group_stv(stv)
         df_caldays = self._generate_calendar_days(stv, cal)
         stv = stv.merge(df_caldays, how="left", on="day")
@@ -270,6 +267,9 @@ class PreprocessDatasets:
 
         if self.top:
             stv = self._filter_top_series(stv, cols)
+
+        if self.test_size:
+            stv = stv[: self.test_size]
 
         stv_pivot = self._pivot_data(
             stv.reset_index(),
