@@ -39,9 +39,11 @@ class CreateTransformedVersionsCVAE:
     ----------
     dataset : the original dataset to consider
     freq: frequency of the dataset
-    rel_dir : relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
     transf_data: what data to transform: only training data 'train' or the whole dataset 'whole'
     top: number of series to consider from the dataset
+    window_size: size of the rolling window
+    weekly_m5: if True, m5 will be transformed to weekly freq, if False, m5 is loaded with daily freq
+    test_size: number of series of the dataset to consider
     """
 
     _instance = None
@@ -60,12 +62,14 @@ class CreateTransformedVersionsCVAE:
         top: int = None,
         window_size: int = 10,
         weekly_m5: bool = True,
+        test_size: int = None,
     ):
         self.dataset_name = dataset_name
         self.input_dir = input_dir
         self.transf_data = transf_data
         self.freq = freq
         self.top = top
+        self.test_size = test_size
         self.weekly_m5 = weekly_m5
         self.dataset = self._get_dataset()
         if window_size:
@@ -122,12 +126,18 @@ class CreateTransformedVersionsCVAE:
         """
         Get dataset and apply preprocessing
         """
-        if self.top:
-            dataset = ppc(
-                self.dataset_name, top=self.top, freq=self.freq, weekly_m5=self.weekly_m5
-            ).apply_preprocess()
-        else:
-            dataset = ppc(self.dataset_name, freq=self.freq).apply_preprocess()
+        ppc_args = {
+            'dataset': self.dataset_name,
+            'freq': self.freq,
+            'weekly_m5': self.weekly_m5,
+        }
+
+        if self.top is not None:
+            ppc_args['top'] = self.top
+        if self.test_size is not None:
+            ppc_args['test_size'] = self.test_size
+
+        dataset = ppc(**ppc_args).apply_preprocess()
 
         return dataset
 

@@ -50,8 +50,13 @@ class PreprocessDatasets:
         else:
             self.sample_perc_int = ""
         self._create_directories()
+        self.n = {"prison": 48, "tourism": 228, "m5": 275, "police": 334}
 
-        self.pickle_path = f"{self.input_dir}data/original_datasets/{self.dataset}_groups_{self.freq}_{self.sample_perc_int}.pickle"
+        self.pickle_path = (
+            f"{self.input_dir}data/original_datasets/"
+            f"{self.dataset}_groups_{self.freq}_{self.sample_perc_int}_"
+            f"{self.test_size}.pickle"
+        )
 
     def _create_directories(self):
         # Create directory to store original datasets if does not exist
@@ -180,7 +185,8 @@ class PreprocessDatasets:
             return None
         df = pd.read_csv(path, sep=",")
         if self.test_size:
-            df = df[: self.test_size]
+            test_size = self.test_size * self.n[self.dataset]
+            df = df[:test_size]
         if drop_columns:
             df = df.drop(drop_columns, axis=1)
         df["Date"] = df[date_column].astype("datetime64[ns]")
@@ -263,9 +269,7 @@ class PreprocessDatasets:
         stv = stv.reset_index()
 
         if self.top:
-            stv = self._filter_top_series(
-                stv, cols
-            )
+            stv = self._filter_top_series(stv, cols)
 
         stv_pivot = self._pivot_data(
             stv.reset_index(),
@@ -329,6 +333,9 @@ class PreprocessDatasets:
 
         police_pivot = self._pivot_data(police.reset_index(), "Date", cols, "Count")
         police_pivot = police_pivot.fillna(0)
+
+        if self.test_size:
+            police_pivot = police_pivot.iloc[:, : self.test_size]
 
         groups_input = {"Crime": [0], "Beat": [1], "Street": [2], "ZIP": [3]}
 
