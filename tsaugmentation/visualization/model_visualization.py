@@ -30,8 +30,9 @@ def plot_loss(history: History, first_index: int, dataset_name: str) -> None:
 def plot_generated_vs_original(
     dec_pred_hat: np.ndarray,
     X_train_raw: np.ndarray,
-    param_vae: float,
     dataset_name: str,
+    transf_param: float,
+    transformation: str = None,
     n_series: int = 8,
     directory: str = ".",
 ) -> None:
@@ -57,11 +58,11 @@ def plot_generated_vs_original(
         ax[i].plot(np.arange(n_samples), X_train_raw[:, i], label="orig")
     plt.legend()
     plt.suptitle(
-        f"VAE generated dataset vs original -> {dataset_name} with sigma={param_vae}",
+        f"VAE generated dataset vs original -> {dataset_name} using {transformation} with sigma={transf_param}",
         fontsize=14,
     )
     plt.savefig(
-        f"{directory}/plots/vae_generated_vs_original_{dataset_name}_{param_vae}.pdf",
+        f"{directory}/plots/vae_generated_vs_original_{dataset_name}_{transf_param}.pdf",
         format="pdf",
         bbox_inches="tight",
     )

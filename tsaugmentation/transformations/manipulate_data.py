@@ -7,10 +7,19 @@ class ManipulateData:
         self.x = np.array(x)
         self.transformation = transformation
         self.orig_steps = np.arange(self.x.shape[0])
-        self.sigma = parameters
+        self.sigma = self.extend_list(parameters, 4)
+
+    @staticmethod
+    def extend_list(lst, size):
+        if len(lst) < size:
+            last_element = lst[-1]
+            lst.extend([last_element] * (size - len(lst)))
+        return lst
 
     def _jitter(self):
-        sigma = np.std(self.x, axis=0) / 4 * self.sigma[0]
+        computed_sigma = np.std(self.x, axis=0) / 4 * self.sigma[0]
+        threshold = 0.1
+        sigma = np.where(computed_sigma < threshold, self.sigma[0], computed_sigma)
         return self.x + np.random.normal(
             loc=0.0, scale=sigma, size=(self.x.shape[0], self.x.shape[1])
         )

@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from typing import Optional
 
 from sklearn.preprocessing import MinMaxScaler
 
@@ -369,28 +370,29 @@ class CreateTransformedVersionsCVAE:
         return X_hat_complete, z, z_mean, z_log_var
 
     def generate_transformed_time_series(
-        self,
-        cvae: CVAE,
-        z_mean: np.ndarray,
-        z_log_var: np.ndarray,
-        std_latent_space: float = None,
-        plot_predictions: bool = True,
-        n_series_plot: int = 8,
+            self,
+            cvae: CVAE,
+            z_mean: np.ndarray,
+            z_log_var: np.ndarray,
+            transformation: Optional[str] = None,
+            transf_param: float = 0.5,
+            plot_predictions: bool = True,
+            n_series_plot: int = 8,
     ) -> np.ndarray:
         """
-        Generate new time series by sampling from the latent space
+        Generate new time series by sampling from the latent space of a Conditional Variational Autoencoder (CVAE).
 
         Args:
-            cvae: trained model
-            z: parameters of the latent space distribution (gaussian) of shape
-                        [num_samples, window_size, param] where param is 0 (mean) or 1 (std)
-            std_latent_space: standard deviation to use when sampling from the learned distributions
-                        e.g. x_mean_sample = np.random.normal(z[id_seq, :, 0], std_latent_space[0])
-            plot_predictions: plot some examples of generated series vs original and store in pdf
-            n_series_plot: number of series to plot
+            cvae: A trained Conditional Variational Autoencoder (CVAE) model.
+            z_mean: Mean parameters of the latent space distribution (Gaussian). Shape: [num_samples, window_size].
+            z_log_var: Log variance parameters of the latent space distribution (Gaussian). Shape: [num_samples, window_size].
+            transformation: Transformation to apply to the data, if any.
+            transf_param: Parameter for the transformation.
+            plot_predictions: If True, plots examples of generated series versus original and stores in a PDF.
+            n_series_plot: Number of series to plot.
 
         Returns:
-            new generated dataset
+            A new generated dataset (time series).
         """
         self.features_input = self._feature_engineering(self.n)
         dynamic_feat, X_inp, static_feat = self.features_input
@@ -405,39 +407,47 @@ class CreateTransformedVersionsCVAE:
             scaler_target=self.scaler_target,
             n_features=self.n_features,
             n=self.n,
-            init_samples_std=std_latent_space,
+            transformation=transformation,
+            transf_param=transf_param
         )
 
         if plot_predictions:
             plot_generated_vs_original(
-                dec_pred_hat,
-                self.X_train_raw,
-                std_latent_space,
-                self.dataset_name,
-                n_series_plot,
+                dec_pred_hat=dec_pred_hat,
+                X_train_raw=self.X_train_raw,
+                transformation=transformation,
+                transf_param=transf_param,
+                dataset_name=self.dataset_name,
+                n_series=n_series_plot,
             )
         return dec_pred_hat
 
     def generate_new_datasets(
-        self,
-        cvae: CVAE,
-        z_mean: np.ndarray,
-        z_log_var: np.ndarray,
-        std_latent_space: list[float],
-        n_versions: int = 6,
-        n_samples: int = 10,
-        save: str = True,
+            self,
+            cvae: CVAE,
+            z_mean: np.ndarray,
+            z_log_var: np.ndarray,
+            transformation: Optional[str] = None,
+            transf_param: float = 0.5,
+            n_versions: int = 6,
+            n_samples: int = 10,
+            save: bool = True,
     ) -> np.ndarray:
         """
-        Generate new datasets using the CVAE trained model and different samples from its latent space
+        Generate new datasets using the CVAE trained model and different samples from its latent space.
 
-        :param cvae: model
-        :param z: parameters of the latent space distribution (gaussian) of shape
-                    [num_samples, window_size, param] where param is 0 (mean) or 1 (std)
-        :param std_latent_space: list of standard deviations to use when sampling from the learned distributions
-        :param n_versions: number of versions of the dataset to create
-        :param n_samples: number of samples of the dataset to create
-        :param save: if true the datasets are stored locally
+        Args:
+            cvae: A trained Conditional Variational Autoencoder (CVAE) model.
+            z_mean: Mean parameters of the latent space distribution (Gaussian). Shape: [num_samples, window_size].
+            z_log_var: Log variance parameters of the latent space distribution (Gaussian). Shape: [num_samples, window_size].
+            transformation: Transformation to apply to the data, if any.
+            transf_param: Parameter for the transformation.
+            n_versions: Number of versions of the dataset to create.
+            n_samples: Number of samples of the dataset to create.
+            save: If True, the generated datasets are stored locally.
+
+        Returns:
+            An array containing the new generated datasets.
         """
         y_new = np.zeros((n_versions, n_samples, self.n, self.s))
         s = 0
@@ -447,7 +457,8 @@ class CreateTransformedVersionsCVAE:
                     cvae=cvae,
                     z_mean=z_mean,
                     z_log_var=z_log_var,
-                    std_latent_space=std_latent_space[v - 1],
+                    transformation=transformation,
+                    transf_param=transf_param
                 )
             if save:
                 self._save_version_file(y_new[v - 1], v, s, "vae")
