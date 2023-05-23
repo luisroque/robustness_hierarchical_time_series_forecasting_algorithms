@@ -278,7 +278,7 @@ class CreateTransformedVersionsCVAE:
             n_features=self.n_features,
             n_features_concat=self.n_features_concat,
             latent_dim=latent_dim,
-            embedding_dim=8
+            embedding_dim=8,
         )
 
         cvae = CVAE(encoder, decoder, self.window_size)
@@ -325,16 +325,14 @@ class CreateTransformedVersionsCVAE:
         return cvae, history, es
 
     def predict(
-        self, cvae: CVAE, similar_static_features: bool = False
+        self, cvae: CVAE, similar_static_features: int = None
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Predict original time series using CVAE, note that by default we will use the middle value
-         (0.5 since we have a MinMax scaling) for the static features so that we are sampling using
-         the most similar structure possible and so reduce the distance between the series
+        """Predict original time series using CVAE
 
         Args:
             cvae: cvae model
-            similar_static_features: bool to indicate if we use the original static feature of a
-                    middle value to increase the similarity between the series generated
+            similar_static_features: int to indicate if we use the original static feature of a
+                    specific series in the dataset
 
         Returns:
             Tuple containing the predictions and also the z value computed by calling predict on
@@ -347,7 +345,8 @@ class CreateTransformedVersionsCVAE:
             sim_static_features = []
             for i in range(len(static_feat)):
                 sim_static_features.append(
-                    0.5 * np.ones((self.n_train, self.n_features, 1))
+                    np.zeros((self.n_train, self.n_features, 1))
+                    + static_feat[i][:, similar_static_features]
                 )
 
             z_mean, z_log_var, z = cvae.encoder.predict(

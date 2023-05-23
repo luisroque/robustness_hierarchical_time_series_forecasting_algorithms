@@ -14,6 +14,8 @@ class TestModel(unittest.TestCase):
         )
 
         self.model, _, _ = self.create_dataset_vae.fit(epochs=5, load_weights=False)
+
+    def test_compute_similarity(self):
         (
             self.preds,
             self.z,
@@ -21,7 +23,6 @@ class TestModel(unittest.TestCase):
             self.z_log_var,
         ) = self.create_dataset_vae.predict(self.model)
 
-    def test_compute_similarity(self):
         dec_pred_hat = self.create_dataset_vae.generate_transformed_time_series(
             cvae=self.model,
             z_mean=self.z_mean,
@@ -36,7 +37,14 @@ class TestModel(unittest.TestCase):
             < 20
         )
 
-    def test_create_correct_number_transformed_datasets(self):
+    def test_create_correct_number_transformed_datasets_similiar_static_features(self):
+        (
+            self.preds,
+            self.z,
+            self.z_mean,
+            self.z_log_var,
+        ) = self.create_dataset_vae.predict(self.model, similar_static_features=0)
+
         new_datasets = self.create_dataset_vae.generate_new_datasets(
             cvae=self.model,
             z_mean=self.z_mean,

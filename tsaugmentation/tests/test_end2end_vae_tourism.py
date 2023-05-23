@@ -13,7 +13,7 @@ class TestModel(unittest.TestCase):
             dataset_name="tourism", freq="M", dynamic_feat_trig=False
         )
 
-        self.model, _, _ = self.create_dataset_vae.fit(epochs=5, load_weights=False)
+        self.model, _, _ = self.create_dataset_vae.fit(epochs=20, load_weights=False)
         (
             self.preds,
             self.z,
