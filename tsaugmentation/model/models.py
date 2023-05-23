@@ -11,6 +11,7 @@ from keras.layers import (
     Dense,
     TimeDistributed,
 )
+from keras.regularizers import l2
 from keras.layers import Dropout, RepeatVector, Embedding
 from keras import backend as K
 import numpy as np
@@ -214,6 +215,9 @@ def get_CVAE(
             n_features,
             kernel_initializer="random_uniform",
             input_shape=(window_size, n_features_concat),
+            dropout=0.5,
+            recurrent_dropout=0.5,
+            kernel_regularizer=l2(0.001)
         ),
         merge_mode="ave",
     )(enc)
@@ -221,7 +225,7 @@ def get_CVAE(
     enc = Dropout(0.5)(enc)
     enc = Concatenate()([enc] + static_feat_emb)
     enc = Flatten()(enc)
-    enc = Dense(latent_dim, activation="relu")(enc)
+    enc = Dense(latent_dim, activation="relu", kernel_regularizer=l2(0.001))(enc)
 
     z_mean = Dense(latent_dim)(enc)
     z_log_var = Dense(latent_dim)(enc)
@@ -245,13 +249,16 @@ def get_CVAE(
             kernel_initializer="random_uniform",
             input_shape=(window_size, latent_dim),
             return_sequences=True,
+            dropout=0.5,
+            recurrent_dropout=0.5,
+            kernel_regularizer=l2(0.001)
         ),
         merge_mode="ave",
     )(dec)
 
     out = Flatten()(dec)
     out = Concatenate()([out] + static_feat_emb)
-    out = Dense(window_size * n_features)(out)
+    out = Dense(window_size * n_features, kernel_regularizer=l2(0.001))(out)
     out = Reshape((window_size, n_features))(out)
 
     decoder = Model([inp_z] + dynamic_features_inp + static_feat_inp, out)

@@ -16,7 +16,7 @@ def generate_new_time_series(
     init_samples_std: float = None,
 ) -> np.ndarray:
     """
-    This function generates a new time series using a trained Variational Autoencoder (VAE) model.
+    This function generates a new time series using a trained Conditional Variational Autoencoder (CVAE) model.
     It samples the first point of the series from the latent space and generates the rest of the series
     using the learned decoder.
 
