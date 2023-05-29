@@ -35,22 +35,38 @@ class InvalidFrequencyError(Exception):
 
 class CreateTransformedVersionsCVAE:
     """
-    A class used to create new datasets from an original one using a CVAE
+    Class for creating transformed versions of the dataset using a Conditional Variational Autoencoder (CVAE).
 
-    Attributes
-    ----------
-    dataset : the original dataset to consider
-    freq: frequency of the dataset
-    transf_data: what data to transform: only training data 'train' or the whole dataset 'whole'
-    top: number of series to consider from the dataset
-    window_size: size of the rolling window
-    weekly_m5: if True, m5 will be transformed to weekly freq, if False, m5 is loaded with daily freq
-    test_size: number of series of the dataset to consider
+    This class contains several methods to preprocess data, fit a CVAE, generate new time series, and
+    save transformed versions of the dataset. It's designed to be used with time-series data.
+
+    The class follows the Singleton design pattern ensuring that only one instance can exist.
+
+    Args:
+        dataset_name: Name of the dataset.
+        freq: Frequency of the time series data.
+        input_dir: Directory where the input data is located. Defaults to "./".
+        transf_data: Type of transformation applied to the data. Defaults to "whole".
+        top: Number of top series to select. Defaults to None.
+        window_size: Window size for the sliding window. Defaults to 10.
+        weekly_m5: If True, use the M5 competition's weekly grouping. Defaults to True.
+        test_size: Size of the test set. If None, the size is determined automatically. Defaults to None.
+        dynamic_feat_trig: If True, apply dynamic feature transformation. Defaults to True.
+
+        Below are parameters for the synthetic data creation:
+            num_base_series_time_points: Number of base time points in the series. Defaults to 100.
+            num_latent_dim: Dimension of the latent space. Defaults to 3.
+            num_variants: Number of variants for the transformation. Defaults to 20.
+            noise_scale: Scale of the Gaussian noise. Defaults to 0.1.
+            amplitude: Amplitude of the time series data. Defaults to 1.0.
     """
 
     _instance = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> 'CreateTransformedVersionsCVAE':
+        """
+        Override the __new__ method to implement the Singleton design pattern.
+        """
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -66,6 +82,11 @@ class CreateTransformedVersionsCVAE:
         weekly_m5: bool = True,
         test_size: int = None,
         dynamic_feat_trig: bool = True,
+        num_base_series_time_points: int = 100,
+        num_latent_dim: int = 3,
+        num_variants: int = 20,
+        noise_scale: float = 0.1,
+        amplitude: float = 1.0,
     ):
         self.dataset_name = dataset_name
         self.input_dir = input_dir
@@ -75,6 +96,11 @@ class CreateTransformedVersionsCVAE:
         self.test_size = test_size
         self.dynamic_feat_trig = dynamic_feat_trig
         self.weekly_m5 = weekly_m5
+        self.num_base_series_time_points = num_base_series_time_points
+        self.num_latent_dim = num_latent_dim
+        self.num_variants = num_variants
+        self.noise_scale = noise_scale
+        self.amplitude = amplitude
         self.dataset = self._get_dataset()
         if window_size:
             self.window_size = window_size
@@ -133,13 +159,16 @@ class CreateTransformedVersionsCVAE:
         ppc_args = {
             "dataset": self.dataset_name,
             "freq": self.freq,
+            "input_dir": self.input_dir,
+            "top": self.top,
+            "test_size": self.test_size,
             "weekly_m5": self.weekly_m5,
+            "num_base_series_time_points": self.num_base_series_time_points,
+            "num_latent_dim": self.num_latent_dim,
+            "num_variants": self.num_variants,
+            "noise_scale": self.noise_scale,
+            "amplitude": self.amplitude,
         }
-
-        if self.top is not None:
-            ppc_args["top"] = self.top
-        if self.test_size is not None:
-            ppc_args["test_size"] = self.test_size
 
         dataset = ppc(**ppc_args).apply_preprocess()
 
