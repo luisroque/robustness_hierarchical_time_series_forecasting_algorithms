@@ -216,7 +216,7 @@ def get_CVAE(
             kernel_initializer="random_uniform",
             input_shape=(window_size, n_features_concat),
             dropout=0.5,
-            recurrent_dropout=0.5,
+            #recurrent_dropout=0.5,
             kernel_regularizer=l2(0.001)
         ),
         merge_mode="ave",
@@ -250,7 +250,7 @@ def get_CVAE(
             input_shape=(window_size, latent_dim),
             return_sequences=True,
             dropout=0.5,
-            recurrent_dropout=0.5,
+            #recurrent_dropout=0.5,
             kernel_regularizer=l2(0.001)
         ),
         merge_mode="ave",
