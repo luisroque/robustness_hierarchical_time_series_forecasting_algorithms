@@ -21,30 +21,60 @@ class PreprocessDatasets:
     ----------
     dataset : str
         the dataset to download and preprocess
-    rel_dir : str
-        relative directory where to store the downloaded files (e.g. './' current dir, '../' parent dir)
+    freq : str
+        frequency of the time series (e.g., 'D' for daily, 'W' for weekly, etc.)
+    input_dir : str
+        input directory where the dataset is located
+    top : int
+        number of top series to filter from the dataset
+    test_size : int
+        size of the test set
+    sample_perc : float
+        percentage of samples to use in the dataset
+    weekly_m5 : bool
+        whether to convert the M5 dataset to weekly data
+    num_base_series_time_points : int
+        number of time points in the base series for synthetic data
+    num_latent_dim : int
+        number of dimensions in the latent space for synthetic data
+    num_variants : int
+        number of variants to generate for synthetic data
+    noise_scale : float
+        scale of the noise for synthetic data
+    amplitude : float
+        amplitude of the seasonality component for synthetic data
     """
 
     def __init__(
         self,
-        dataset,
-        freq,
-        input_dir="./",
-        top=500,
-        test_size=None,
-        sample_perc=None,
-        weekly_m5=True,
-    ):
+        dataset: str,
+        freq: str,
+        input_dir: str = "./",
+        top: int = 500,
+        test_size: int = None,
+        sample_perc: float = None,
+        weekly_m5: bool = True,
+        num_base_series_time_points: int = 100,
+        num_latent_dim: int = 3,
+        num_variants: int = 20,
+        noise_scale: float = 0.1,
+        amplitude: float = 1.0,
+    ) -> None:
         self.weekly = weekly_m5
         if dataset == "m5":
             dataset = dataset.capitalize()
         self.dataset = dataset
         self.freq = freq
         self.input_dir = input_dir
+        self.num_base_series_time_points = num_base_series_time_points
+        self.num_latent_dim = num_latent_dim
+        self.num_variants = num_variants
         self.api = "http://94.60.148.158:8086/apidownload/"
         self.top = top
         self.test_size = test_size
         self.sample_perc = sample_perc
+        self.noise_scale = noise_scale
+        self.amplitude = amplitude
         if self.sample_perc is not None and self.sample_perc > 1:
             raise ValueError("sample_perc must be between 0 and 1")
         elif self.sample_perc:
@@ -80,12 +110,16 @@ class PreprocessDatasets:
         return base_series
 
     @staticmethod
-    def generate_variants(base_series, num_variants, noise_scale):
+    def generate_variants(
+        base_series, num_variants, noise_scale, seasonality_period, amplitude
+    ):
         variants = []
         for series in base_series:
+            t = np.arange(len(series))
+            seasonal_component = np.sin(2 * np.pi * t * amplitude / seasonality_period)
             for _ in range(num_variants):
                 noise = np.random.normal(scale=noise_scale, size=series.shape)
-                variant = series + noise
+                variant = series + noise + seasonal_component[:, np.newaxis]
                 variants.append(variant)
         return variants
 
@@ -367,29 +401,46 @@ class PreprocessDatasets:
         return groups
 
     def _synthetic(
-            self,
-            length=100,
-            num_base_series=3,
-            num_variants=20,
-            noise_scale=0.1,
-            freq="D",
-            seasonality=365,
-            h=1,
+        self,
     ):
-        base_series = self.create_base_time_series(length, num_base_series)
-        variants = self.generate_variants(base_series, num_variants, noise_scale)
+        if self.freq == "D":
+            seasonality, h = 365, 30
+        elif self.freq == "W":
+            seasonality, h = 52, 12
+        elif self.freq == "M":
+            seasonality, h = 12, 2
+        elif self.freq == "Q":
+            seasonality, h = 4, 2
+        else:
+            raise ValueError(f"Unsupported frequency: {self.freq}")
+
+        base_series = self.create_base_time_series(
+            self.num_base_series_time_points, self.num_latent_dim
+        )
+        variants = self.generate_variants(
+            base_series,
+            self.num_variants,
+            self.noise_scale,
+            seasonality,
+            self.amplitude,
+        )
 
         start_date = pd.Timestamp("2023-01-01")
-        end_date = start_date + timedelta(days=length - 1)
-        dates = pd.date_range(start_date, end_date, freq=freq)
+        end_date = start_date + timedelta(days=self.num_base_series_time_points - 1)
+        dates = pd.date_range(start_date, end_date, freq=self.freq)
 
         df = pd.DataFrame(np.concatenate(variants, axis=1), index=dates)
 
-        column_tuples = [(f"group_1", f"group_element_{i // num_variants + 1}")
-                         for i in range(num_base_series * num_variants)]
-        df.columns = pd.MultiIndex.from_tuples(column_tuples, names=["Group", "Element"])
+        column_tuples = [
+            (f"group_1", f"group_element_{i // self.num_variants + 1}")
+            for i in range(self.num_latent_dim * self.num_variants)
+        ]
+        df.columns = pd.MultiIndex.from_tuples(
+            column_tuples, names=["Group", "Element"]
+        )
 
         groups_input = {f"group_1": [1]}
+
         groups = self._generate_groups(df, groups_input, seasonality, h)
         groups["base_series"] = np.array(base_series)
 
