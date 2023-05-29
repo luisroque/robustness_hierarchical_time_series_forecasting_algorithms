@@ -224,8 +224,8 @@ class PreprocessDatasets:
 
     def _prison(self):
         data = self._load_pickle_file(self.pickle_path)
-        #if data is not None:
-        #    return data
+        if data is not None:
+            return data
 
         path = self._get_dataset_path()
         prison = self._load_and_preprocess_data(path, "t", ["Unnamed: 0"])
@@ -391,6 +391,10 @@ class PreprocessDatasets:
 
         groups_input = {f"group_1": [1]}
         groups = self._generate_groups(df, groups_input, seasonality, h)
+        groups["base_series"] = np.array(base_series)
+
+        with open(self.pickle_path, "wb") as handle:
+            pickle.dump(groups, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         return groups
 
