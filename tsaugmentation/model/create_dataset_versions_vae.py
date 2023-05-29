@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from sklearn.preprocessing import MinMaxScaler
 
@@ -12,7 +12,6 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 from tsaugmentation.model.models import CVAE, get_CVAE, get_flatten_size_encoder
 from tsaugmentation.feature_engineering.static_features import (
     create_static_features,
-    scale_static_features,
 )
 from tsaugmentation.feature_engineering.dynamic_features import create_dynamic_features
 from tsaugmentation.feature_engineering.feature_transformations import (
@@ -26,6 +25,8 @@ from tsaugmentation.visualization.model_visualization import plot_generated_vs_o
 from tsaugmentation.preprocessing.pre_processing_datasets import (
     PreprocessDatasets as ppc,
 )
+
+from tsaugmentation import __version__
 
 
 class InvalidFrequencyError(Exception):
@@ -370,14 +371,14 @@ class CreateTransformedVersionsCVAE:
         return X_hat_complete, z, z_mean, z_log_var
 
     def generate_transformed_time_series(
-            self,
-            cvae: CVAE,
-            z_mean: np.ndarray,
-            z_log_var: np.ndarray,
-            transformation: Optional[str] = None,
-            transf_param: float = 0.5,
-            plot_predictions: bool = True,
-            n_series_plot: int = 8,
+        self,
+        cvae: CVAE,
+        z_mean: np.ndarray,
+        z_log_var: np.ndarray,
+        transformation: Optional[str] = None,
+        transf_param: float = 0.5,
+        plot_predictions: bool = True,
+        n_series_plot: int = 8,
     ) -> np.ndarray:
         """
         Generate new time series by sampling from the latent space of a Conditional Variational Autoencoder (CVAE).
@@ -408,7 +409,7 @@ class CreateTransformedVersionsCVAE:
             n_features=self.n_features,
             n=self.n,
             transformation=transformation,
-            transf_param=transf_param
+            transf_param=transf_param,
         )
 
         if plot_predictions:
@@ -419,19 +420,20 @@ class CreateTransformedVersionsCVAE:
                 transf_param=transf_param,
                 dataset_name=self.dataset_name,
                 n_series=n_series_plot,
+                model_version=__version__,
             )
         return dec_pred_hat
 
     def generate_new_datasets(
-            self,
-            cvae: CVAE,
-            z_mean: np.ndarray,
-            z_log_var: np.ndarray,
-            transformation: Optional[str] = None,
-            transf_param: float = 0.5,
-            n_versions: int = 6,
-            n_samples: int = 10,
-            save: bool = True,
+        self,
+        cvae: CVAE,
+        z_mean: np.ndarray,
+        z_log_var: np.ndarray,
+        transformation: Optional[str] = None,
+        transf_param: List[float] = None,
+        n_versions: int = 6,
+        n_samples: int = 10,
+        save: bool = True,
     ) -> np.ndarray:
         """
         Generate new datasets using the CVAE trained model and different samples from its latent space.
@@ -449,6 +451,8 @@ class CreateTransformedVersionsCVAE:
         Returns:
             An array containing the new generated datasets.
         """
+        if transf_param is None:
+            transf_param = [0.5, 2, 4, 10, 20, 50]
         y_new = np.zeros((n_versions, n_samples, self.n, self.s))
         s = 0
         for v in range(1, n_versions + 1):
@@ -458,7 +462,7 @@ class CreateTransformedVersionsCVAE:
                     z_mean=z_mean,
                     z_log_var=z_log_var,
                     transformation=transformation,
-                    transf_param=transf_param
+                    transf_param=transf_param[v - 1],
                 )
             if save:
                 self._save_version_file(y_new[v - 1], v, s, "vae")

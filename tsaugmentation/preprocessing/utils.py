@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_generated_vs_original(
+def plot_dataset_generated_vs_original(
     dec_pred_hat: np.ndarray, X_train_raw: np.ndarray
 ) -> None:
     _, ax = plt.subplots(4, 2, figsize=(18, 10))

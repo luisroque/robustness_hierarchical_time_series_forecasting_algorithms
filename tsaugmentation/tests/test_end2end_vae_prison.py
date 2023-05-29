@@ -27,7 +27,7 @@ class TestModel(unittest.TestCase):
             cvae=self.model,
             z_mean=self.z_mean,
             z_log_var=self.z_log_var,
-            std_latent_space=0.5,
+            transf_param=0.5,
         )
 
         self.assertTrue(
@@ -49,7 +49,7 @@ class TestModel(unittest.TestCase):
             cvae=self.model,
             z_mean=self.z_mean,
             z_log_var=self.z_log_var,
-            std_latent_space=[0.5, 1, 2, 5, 10, 15],
+            transf_param=[0.5, 1, 2, 5, 10, 15],
             n_versions=2,
             n_samples=3,
         )

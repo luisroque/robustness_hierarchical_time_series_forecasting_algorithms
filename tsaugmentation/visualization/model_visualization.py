@@ -32,7 +32,8 @@ def plot_generated_vs_original(
     X_train_raw: np.ndarray,
     dataset_name: str,
     transf_param: float,
-    transformation: str = None,
+    model_version: str,
+    transformation: str,
     n_series: int = 8,
     directory: str = ".",
 ) -> None:
@@ -62,7 +63,7 @@ def plot_generated_vs_original(
         fontsize=14,
     )
     plt.savefig(
-        f"{directory}/plots/vae_generated_vs_original_{dataset_name}_{transf_param}.pdf",
+        f"{directory}/plots/vae_{model_version}_generated_vs_original_{dataset_name}_{transformation}_{transf_param}.pdf",
         format="pdf",
         bbox_inches="tight",
     )
