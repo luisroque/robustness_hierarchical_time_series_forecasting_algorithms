@@ -7,6 +7,8 @@ import os
 import zipfile
 import numpy as np
 import datetime
+from datetime import timedelta
+from sklearn.preprocessing import MinMaxScaler
 
 
 class PreprocessDatasets:
@@ -64,6 +66,28 @@ class PreprocessDatasets:
         Path(f"{self.input_dir}data/original_datasets").mkdir(
             parents=True, exist_ok=True
         )
+
+    @staticmethod
+    def generate_time_series(length, num_series):
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        series = [
+            scaler.fit_transform(np.random.randn(length, 1)) for _ in range(num_series)
+        ]
+        return series
+
+    def create_base_time_series(self, length, num_series):
+        base_series = self.generate_time_series(length, num_series)
+        return base_series
+
+    @staticmethod
+    def generate_variants(base_series, num_variants, noise_scale):
+        variants = []
+        for series in base_series:
+            for _ in range(num_variants):
+                noise = np.random.normal(scale=noise_scale, size=series.shape)
+                variant = series + noise
+                variants.append(variant)
+        return variants
 
     @staticmethod
     def _floor(x, freq):
@@ -200,8 +224,8 @@ class PreprocessDatasets:
 
     def _prison(self):
         data = self._load_pickle_file(self.pickle_path)
-        if data is not None:
-            return data
+        #if data is not None:
+        #    return data
 
         path = self._get_dataset_path()
         prison = self._load_and_preprocess_data(path, "t", ["Unnamed: 0"])
@@ -340,6 +364,34 @@ class PreprocessDatasets:
         groups_input = {"Crime": [0], "Beat": [1], "Street": [2], "ZIP": [3]}
 
         groups = self._generate_groups(police_pivot, groups_input, 365, 30)
+        return groups
+
+    def _synthetic(
+            self,
+            length=100,
+            num_base_series=3,
+            num_variants=20,
+            noise_scale=0.1,
+            freq="D",
+            seasonality=365,
+            h=1,
+    ):
+        base_series = self.create_base_time_series(length, num_base_series)
+        variants = self.generate_variants(base_series, num_variants, noise_scale)
+
+        start_date = pd.Timestamp("2023-01-01")
+        end_date = start_date + timedelta(days=length - 1)
+        dates = pd.date_range(start_date, end_date, freq=freq)
+
+        df = pd.DataFrame(np.concatenate(variants, axis=1), index=dates)
+
+        column_tuples = [(f"group_1", f"group_element_{i // num_variants + 1}")
+                         for i in range(num_base_series * num_variants)]
+        df.columns = pd.MultiIndex.from_tuples(column_tuples, names=["Group", "Element"])
+
+        groups_input = {f"group_1": [1]}
+        groups = self._generate_groups(df, groups_input, seasonality, h)
+
         return groups
 
     @staticmethod

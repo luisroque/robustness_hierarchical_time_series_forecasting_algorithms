@@ -6,9 +6,9 @@ import tsaugmentation as tsag
 class TestModel(unittest.TestCase):
     def test_import_prison(self):
         self.data = tsag.preprocessing.PreprocessDatasets(
-            "prison", freq="Q", test_size=2
+            "prison", freq="Q"
         ).apply_preprocess()
-        self.assertTrue(self.data["train"]["data"].shape == (40, 2))
+        self.assertTrue(self.data["train"]["data"].shape == (40, 32))
 
     def test_import_tourism(self):
         self.data = tsag.preprocessing.PreprocessDatasets(
