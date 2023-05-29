@@ -105,21 +105,23 @@ class PreprocessDatasets:
         ]
         return series
 
-    def create_base_time_series(self, length, num_series):
-        base_series = self.generate_time_series(length, num_series)
-        return base_series
-
-    @staticmethod
-    def generate_variants(
-        base_series, num_variants, noise_scale, seasonality_period, amplitude
+    def create_base_time_series(
+        self, length, num_series, seasonality_period, amplitude
     ):
-        variants = []
+        base_series = self.generate_time_series(length, num_series)
         for series in base_series:
             t = np.arange(len(series))
             seasonal_component = np.sin(2 * np.pi * t * amplitude / seasonality_period)
+            base_series += seasonal_component[:, np.newaxis]
+        return base_series
+
+    @staticmethod
+    def generate_variants(base_series, num_variants, noise_scale):
+        variants = []
+        for series in base_series:
             for _ in range(num_variants):
                 noise = np.random.normal(scale=noise_scale, size=series.shape)
-                variant = series + noise + seasonal_component[:, np.newaxis]
+                variant = series + noise
                 variants.append(variant)
         return variants
 
@@ -415,14 +417,15 @@ class PreprocessDatasets:
             raise ValueError(f"Unsupported frequency: {self.freq}")
 
         base_series = self.create_base_time_series(
-            self.num_base_series_time_points, self.num_latent_dim
+            self.num_base_series_time_points,
+            self.num_latent_dim,
+            seasonality,
+            self.amplitude,
         )
         variants = self.generate_variants(
             base_series,
             self.num_variants,
             self.noise_scale,
-            seasonality,
-            self.amplitude,
         )
 
         start_date = pd.Timestamp("2023-01-01")
