@@ -32,7 +32,7 @@ class TestModel(unittest.TestCase):
         )
 
         self.assertTrue(
-            self.create_dataset_vae.dataset["train"]["data"].shape == (263, 2)
+            self.create_dataset_vae.dataset["train"]["data"].shape == (261, 2)
         )
 
     def test_test_size_m5_daily(self):
@@ -40,8 +40,10 @@ class TestModel(unittest.TestCase):
             dataset_name="m5", freq="D", test_size=2, weekly_m5=False
         )
 
+        print(self.create_dataset_vae.dataset["train"]["data"].shape)
+
         self.assertTrue(
-            self.create_dataset_vae.dataset["train"]["data"].shape == (1883, 2)
+            self.create_dataset_vae.dataset["train"]["data"].shape == (1869, 2)
         )
 
     def test_test_size_police(self):

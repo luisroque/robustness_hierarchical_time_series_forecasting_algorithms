@@ -339,6 +339,12 @@ class PreprocessDatasets:
         )
         stv_pivot = stv_pivot.fillna(0)
 
+        if self.weekly:
+            # Filter first and last week since they are not complete
+            min_date = stv_pivot.index.min() + pd.Timedelta(weeks=1)
+            max_date = stv_pivot.index.max() - pd.Timedelta(weeks=1)
+            stv_pivot_filtered = stv_pivot[(stv_pivot.index >= min_date) & (stv_pivot.index <= max_date)]
+
         groups_input = {
             "Department": [0],
             "Category": [1],
@@ -348,7 +354,7 @@ class PreprocessDatasets:
         }
 
         seasonality, h = (52, 12) if self.weekly else (365, 30)
-        groups = self._generate_groups(stv_pivot, groups_input, seasonality, h)
+        groups = self._generate_groups(stv_pivot_filtered, groups_input, seasonality, h)
         return groups
 
     def _police(self):

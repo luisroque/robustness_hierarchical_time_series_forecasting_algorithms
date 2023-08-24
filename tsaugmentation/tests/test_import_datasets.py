@@ -20,7 +20,7 @@ class TestModel(unittest.TestCase):
         self.data = tsag.preprocessing.PreprocessDatasets(
             "m5", test_size=2, freq="W"
         ).apply_preprocess()
-        self.assertTrue(self.data["train"]["data"].shape == (263, 2))
+        self.assertTrue(self.data["train"]["data"].shape == (261, 2))
 
     def test_import_m5_daily(self):
         self.data = tsag.preprocessing.PreprocessDatasets(
