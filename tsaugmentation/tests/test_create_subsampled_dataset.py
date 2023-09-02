@@ -51,3 +51,11 @@ class TestCreateGroups(unittest.TestCase):
             <= expected_len_subsample + deviation,
             f"The length of the subsampled x_values is not approximately {self.sample_perc*100}% of the original length.",
         )
+
+        self.assertTrue(
+            groups["predict"]["data"].shape != groups_orig["predict"]["data"].shape
+        )
+
+        self.assertTrue(
+            groups["predict"]["original_data"].shape == groups_orig["predict"]["data"].shape
+        )

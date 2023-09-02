@@ -77,12 +77,13 @@ def sample_data(df: pd.DataFrame, dates: list, sample_perc: float, h: int) -> tu
     return sampled_with_ends, filtered_dates, x_values
 
 
-def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_perc=0.5):
+def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_perc=None):
     """
     It works for two kinds of structures:
         1) The name of the columns have specific length for specific groups
         2) There is a multiIndex column structure for each group
     """
+    y_original = y
     if sample_perc:
         y, dates, x_values = sample_data(y, dates, sample_perc=sample_perc, h=h)
 
@@ -141,6 +142,7 @@ def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_per
         groups[i]["g_number"] = len(groups_input)
 
         groups[i]["data"] = y_.values.T.ravel()
+        groups[i]["original_data"] = y_original.values.T.ravel()
 
     groups["seasonality"] = seasonality
     groups["h"] = h
