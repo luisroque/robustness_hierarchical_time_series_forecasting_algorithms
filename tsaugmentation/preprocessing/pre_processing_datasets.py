@@ -282,7 +282,7 @@ class PreprocessDatasets:
         if data is not None:
             return data
 
-        path = self._get_dataset_path()
+        path = self._get_dataset_path(file_type='csv')
         tourism = self._load_and_preprocess_data(path, "Date")
         if tourism is None:
             return {}
