@@ -30,6 +30,10 @@ class TestCreateGroups(unittest.TestCase):
 
         groups_orig = CreateGroups(
             dataset_name=self.dataset_name_t, freq="M"
+        ).create_original_groups()
+
+        groups_orig = CreateGroups(
+            dataset_name=self.dataset_name_t, freq="M"
         ).read_original_groups()
 
         self.assertTrue(
@@ -59,3 +63,5 @@ class TestCreateGroups(unittest.TestCase):
         self.assertTrue(
             groups["predict"]["original_data"].shape == groups_orig["predict"]["data"].shape
         )
+
+        self.assertTrue("original_data" in groups_orig["predict"])

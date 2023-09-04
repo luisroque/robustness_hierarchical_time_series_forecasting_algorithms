@@ -142,7 +142,8 @@ def generate_groups_data_flat(y, dates, groups_input, seasonality, h, sample_per
         groups[i]["g_number"] = len(groups_input)
 
         groups[i]["data"] = y_.values.T.ravel()
-        groups[i]["original_data"] = y_original.values.T.ravel()
+
+    groups['predict']["original_data"] = y_original.values.T.ravel()
 
     groups["seasonality"] = seasonality
     groups["h"] = h

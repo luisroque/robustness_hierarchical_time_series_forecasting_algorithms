@@ -405,7 +405,7 @@ class PreprocessDatasets:
 
         groups_input = {"Crime": [0], "Beat": [1], "Street": [2], "ZIP": [3]}
 
-        groups = self._generate_groups(police_pivot, groups_input, 365, 30)
+        groups = self._generate_groups(police_pivot, groups_input, 7, 30)
         return groups
 
     def _synthetic(
