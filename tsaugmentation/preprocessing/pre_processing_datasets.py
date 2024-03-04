@@ -344,6 +344,8 @@ class PreprocessDatasets:
             min_date = stv_pivot.index.min() + pd.Timedelta(weeks=1)
             max_date = stv_pivot.index.max() - pd.Timedelta(weeks=1)
             stv_pivot_filtered = stv_pivot[(stv_pivot.index >= min_date) & (stv_pivot.index <= max_date)]
+        else:
+            stv_pivot_filtered = stv_pivot
 
         groups_input = {
             "Department": [0],
