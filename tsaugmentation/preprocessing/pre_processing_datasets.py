@@ -9,6 +9,7 @@ import numpy as np
 import datetime
 from datetime import timedelta
 from sklearn.preprocessing import MinMaxScaler
+from huggingface_hub import hf_hub_download
 
 
 class PreprocessDatasets:
@@ -69,7 +70,6 @@ class PreprocessDatasets:
         self.num_base_series_time_points = num_base_series_time_points
         self.num_latent_dim = num_latent_dim
         self.num_variants = num_variants
-        self.api = "http://94.60.148.158:8086/apidownload/"
         self.top = top
         self.test_size = test_size
         self.sample_perc = sample_perc
@@ -89,6 +89,13 @@ class PreprocessDatasets:
             f"{self.dataset}_groups_{self.freq}_{self.sample_perc_int}_"
             f"{self.test_size}_{self.top}.pickle"
         )
+
+        self.dataset_mapping = {
+            "m5": "zaai-ai/hierarchical_datasets",
+            "police": "zaai-ai/hierarchical_datasets",
+            "prison": "zaai-ai/hierarchical_datasets",
+            "tourism": "zaai-ai/hierarchical_datasets"
+        }
 
     def _create_directories(self):
         # Create directory to store original datasets if does not exist
@@ -130,12 +137,24 @@ class PreprocessDatasets:
         offset = x[0].ceil(freq) - x[0] + datetime.timedelta(days=-1)
         return (x + offset).floor(freq) - offset
 
+    def load_dataset_from_huggingface(self):
+        dataset_id = self.dataset_mapping.get(self.dataset.lower())
+        if not dataset_id:
+            raise ValueError(f"Dataset {self.dataset} is not supported.")
+        # Download the dataset file from Hugging Face Hub
+        file_path = hf_hub_download(repo_id=dataset_id, filename=f"{self.dataset.lower()}.pkl", repo_type="dataset")
+        # Save the dataset locally as a pickle file
+        save_path = f"{self.input_dir}data/original_datasets/{self.dataset.lower()}.pkl"
+        with open(save_path, 'wb') as f:
+            pickle.dump(file_path, f)
+        return save_path
+
     def _get_dataset_path(self, file_type="csv"):
         path = f"{self.input_dir}data/original_datasets/{self.dataset}.{file_type}"
         if not os.path.isfile(path):
             try:
-                request.urlretrieve(f"{self.api}{self.dataset}", path)
-            except request.URLError as e:
+                self.load_dataset_from_huggingface()
+            except Exception as e:
                 print(f"Failed to download the dataset. Error: {e}")
         return path
 

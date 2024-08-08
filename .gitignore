@@ -65,3 +65,6 @@ build/
 
 *.pkl
 *.npy
+
+*scripts/
+*logs/

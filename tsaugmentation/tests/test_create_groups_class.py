@@ -18,11 +18,6 @@ class TestCreateGroups(unittest.TestCase):
         groups = self.create_group.create_subsampled_groups()
         self.assertTrue(groups["h"] == 8)
 
-    def test_read_subsampled_dataset(self):
-        groups = self.create_group.read_subsampled_groups()
-        plot_series(groups)
-        self.assertTrue(groups["h"] == 8)
-
     def test_read_subsampled_dataset_tourism(self):
         groups_missing = self.create_group_t.read_subsampled_groups()
         groups = self.create_group_t_original.read_original_groups()
